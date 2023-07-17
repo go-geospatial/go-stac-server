@@ -13,21 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package router
+package static
 
 import (
-	"github.com/go-geospatial/go-stac-server/handler"
+	"embed"
+	"net/http"
+
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/rs/zerolog/log"
 )
 
-// SetupRoutes setup router api
-func SetupRoutes(app *fiber.App) {
-	// config.js
-	app.Get("/config.js", handler.StacBrowserConfig)
-	// STAC API
-	api := app.Group("api")
-	stac := api.Group("stac")
-	stacV1 := stac.Group("v1")
+//go:embed files/*
+var f embed.FS
 
-	stacV1.Get("/", handler.Catalog)
+func InitStaticFiles(app *fiber.App) {
+	log.Info().Msg("seting up filesystem")
+	app.Use("/", filesystem.New(filesystem.Config{
+		Root:       http.FS(f),
+		PathPrefix: "files",
+		Browse:     true,
+	}))
 }

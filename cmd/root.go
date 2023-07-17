@@ -26,11 +26,16 @@ import (
 	"github.com/go-geospatial/go-stac-server/database"
 	"github.com/go-geospatial/go-stac-server/middleware"
 	"github.com/go-geospatial/go-stac-server/router"
+	"github.com/go-geospatial/go-stac-server/static"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cache"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	json "github.com/goccy/go-json"
 )
 
 var cfgFile string
@@ -53,7 +58,10 @@ var rootCmd = &cobra.Command{
 		log.Info().Msg("successfully connected to database")
 
 		// Create new Fiber instance
-		app := fiber.New()
+		app := fiber.New(fiber.Config{
+			JSONEncoder: json.Marshal,
+			JSONDecoder: json.Unmarshal,
+		})
 
 		// shutdown cleanly on interrupt
 		c := make(chan os.Signal, 1)
@@ -75,6 +83,20 @@ var rootCmd = &cobra.Command{
 		}
 		app.Use(cors.New(corsConfig))
 
+		// configure caching
+		app.Use(cache.New(cache.Config{
+			Next: func(c *fiber.Ctx) bool {
+				return c.Query("refresh") == "true"
+			},
+			Expiration:   30 * time.Minute,
+			CacheControl: true,
+		}))
+
+		// compression
+		app.Use(compress.New(compress.Config{
+			Level: compress.LevelBestSpeed, // 1
+		}))
+
 		// Setup logging middleware
 		app.Use(middleware.NewLogger())
 
@@ -83,6 +105,9 @@ var rootCmd = &cobra.Command{
 
 		// Setup routes
 		router.SetupRoutes(app)
+
+		// configure static serves
+		static.InitStaticFiles(app)
 
 		err := app.Listen(":" + viper.GetString("server.port"))
 		if err != nil {

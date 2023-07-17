@@ -71,13 +71,13 @@ func Catalog(c *fiber.Ctx) error {
 		Rel:   "service-desc",
 		Type:  "application/vnd.oai.openapi+json;version=3.0",
 		Title: "OpenAPI service description",
-		Href:  fmt.Sprintf("%s/openapi", self),
+		Href:  fmt.Sprintf("%s/openapi.json", baseUrl),
 	})
 	links = append(links, stac.Link{
 		Rel:   "service-doc",
 		Type:  "text/html",
 		Title: "OpenAPI service documentation",
-		Href:  fmt.Sprintf("%s/docs", self),
+		Href:  fmt.Sprintf("%s/doc/openapi.html", baseUrl),
 	})
 
 	// get a list of all collections

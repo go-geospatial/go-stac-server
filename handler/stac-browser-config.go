@@ -13,21 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package router
+package handler
 
 import (
-	"github.com/go-geospatial/go-stac-server/handler"
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 )
 
-// SetupRoutes setup router api
-func SetupRoutes(app *fiber.App) {
-	// config.js
-	app.Get("/config.js", handler.StacBrowserConfig)
-	// STAC API
-	api := app.Group("api")
-	stac := api.Group("stac")
-	stacV1 := stac.Group("v1")
-
-	stacV1.Get("/", handler.Catalog)
+func StacBrowserConfig(c *fiber.Ctx) error {
+	data := []byte(fmt.Sprintf("window.STAC_BROWSER_CONFIG = {catalogUrl: \"%s://%s/api/stac/v1\"}", c.Protocol(), c.Hostname()))
+	c.Status(200).Write(data)
+	return nil
 }
