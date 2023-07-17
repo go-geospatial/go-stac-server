@@ -20,6 +20,8 @@ pypgstac migrate
 go-stac-server
 ```
 
+In a web browser, navigate to `https://localhost:3000/` to browse the catalog.
+
 # Configuration
 
 | Command Flag | Environment Variable | Configuration File | Description                                                                                         |
