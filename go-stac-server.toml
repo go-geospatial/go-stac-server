@@ -1,0 +1,7 @@
+[stac.catalog]
+id="stac-catalog"
+title="go-stac-server STAC Catalog"
+description="STAC catalog served by go-stac-server"
+
+[database]
+dsn="postgresql://stac@localhost/stac?options=--search_path=pgstac,public"
