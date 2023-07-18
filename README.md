@@ -4,7 +4,7 @@ A dynamic stac 1.0.0 server implemented in golang
 # Requirements
 
 1. PostgreSQL 13+
-2. PostGIS
+2. PostGIS 3+
 3. [pgstac](https://github.com/stac-utils/pgstac) schema
 4. go-stac-server
 5. geospatial data
@@ -43,6 +43,10 @@ id="stac-catalog"
 title="STAC API"
 description="go-stac-server STAC API"
 ```
+
+(PgSTAC)[https://stac-utils.github.io/pgstac/pgstac/] provides the backend database
+and offers several configuration options. See their documentation for specifics on
+what options are available. 
 
 # Implemented STAC extensions
 
