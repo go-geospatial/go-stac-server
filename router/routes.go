@@ -30,5 +30,6 @@ func SetupRoutes(app *fiber.App) {
 	stacV1 := stac.Group("v1")
 
 	stacV1.Get("/", handler.Catalog)
+	stacV1.Get("/collections", handler.Collections)
 	stacV1.Get("/conformance", handler.Conformance)
 }

@@ -19,3 +19,5 @@ type Error struct {
 	Code        string `json:"code"`
 	Description string `json:"description"`
 }
+
+var CollectionJSONError string = "540"

@@ -15,10 +15,28 @@
 
 package stac
 
+import "fmt"
+
 type Link struct {
 	Rel    string `json:"rel"`
 	Type   string `json:"type"`
 	Title  string `json:"title,omitempty"`
 	Href   string `json:"href"`
 	Method string `json:"method,omitempty"`
+}
+
+// AddLink creates a new link reference in the Links array of a Feature
+// rel is the name of the link relationship
+// baseUrl baseUrl of this STAC server
+// endpoint is the last portion of the URL i.e. <base url>/api/stac/v1/<endpoint>
+func AddLink(links []Link, baseUrl string, rel string, endpoint string) []Link {
+	self := fmt.Sprintf("%s/api/stac/v1", baseUrl)
+
+	links = append(links, Link{
+		Rel:  rel,
+		Type: "application/json",
+		Href: fmt.Sprintf("%s%s", self, endpoint),
+	})
+
+	return links
 }
