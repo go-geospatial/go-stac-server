@@ -30,9 +30,9 @@ var (
 	instance *pgxpool.Pool
 )
 
-var ConnectionErrorCode string = "551"
+var ConnectionErrorCode string = "DatabaseConnectionError"
 var ConnectionErrorDescription string = "Could not connect to database"
-var QueryErrorCode string = "552"
+var QueryErrorCode string = "DatabaseQueryError"
 
 func GetInstance(ctx context.Context) *pgxpool.Pool {
 	once.Do(func() {

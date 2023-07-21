@@ -15,13 +15,7 @@
 
 package stac
 
-type Error struct {
-	Code        string `json:"code"`
-	Description string `json:"description"`
+type GeoJson struct {
+	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates"`
 }
-
-var JSONParsingError string = "JSONParsingError"
-var NotFoundError string = "NotFoundError"
-var DatabaseError string = "DatabaseError"
-var ParameterError string = "ParameterError"
-var ServerError string = "ServerError"

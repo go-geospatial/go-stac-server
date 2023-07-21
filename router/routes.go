@@ -32,4 +32,7 @@ func SetupRoutes(app *fiber.App) {
 	stacV1.Get("/", handler.Catalog)
 	stacV1.Get("/collections", handler.Collections)
 	stacV1.Get("/conformance", handler.Conformance)
+	stacV1.Get("/collections/:id", handler.Collection)
+	stacV1.Get("/collections/:id/items", handler.Items)
+	stacV1.Get("/collections/:collectionId/items/:itemId", handler.Item)
 }

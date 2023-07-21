@@ -13,15 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stac
+package handler
 
-type Error struct {
-	Code        string `json:"code"`
-	Description string `json:"description"`
+import (
+	"github.com/gofiber/fiber/v2"
+)
+
+// Item returns details of a specific item
+func Search(c *fiber.Ctx) error {
+	return c.JSON("")
 }
-
-var JSONParsingError string = "JSONParsingError"
-var NotFoundError string = "NotFoundError"
-var DatabaseError string = "DatabaseError"
-var ParameterError string = "ParameterError"
-var ServerError string = "ServerError"

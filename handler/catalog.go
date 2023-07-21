@@ -29,7 +29,7 @@ import (
 func Catalog(c *fiber.Ctx) error {
 	ctx := context.Background()
 
-	baseUrl := fmt.Sprintf("%s://%s", c.Protocol(), c.Hostname())
+	baseUrl := getBaseUrl(c)
 	self := fmt.Sprintf("%s/api/stac/v1", baseUrl)
 	links := make([]stac.Link, 0, 100)
 	links = append(links, stac.Link{

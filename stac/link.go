@@ -29,12 +29,12 @@ type Link struct {
 // rel is the name of the link relationship
 // baseUrl baseUrl of this STAC server
 // endpoint is the last portion of the URL i.e. <base url>/api/stac/v1/<endpoint>
-func AddLink(links []Link, baseUrl string, rel string, endpoint string) []Link {
+func AddLink(links []Link, baseUrl string, rel string, endpoint string, mimeType string) []Link {
 	self := fmt.Sprintf("%s/api/stac/v1", baseUrl)
 
 	links = append(links, Link{
 		Rel:  rel,
-		Type: "application/json",
+		Type: mimeType,
 		Href: fmt.Sprintf("%s%s", self, endpoint),
 	})
 
