@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "go-stac-server",
-    "description": "go-stac-server",
+    "description": "Searchable spatiotemporal metadata catalog",
     "version": "1.0.0"
   },
   "paths": {
@@ -816,12 +816,32 @@
         ],
         "summary": "Check health of service",
         "description": "Check health of service",
-        "operationId": "healths__get",
+        "operationId": "healthz__get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "Service Health"
+        ],
+        "summary": "Prometheus metrics",
+        "description": "",
+        "operationId": "metrics__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
                 "schema": {}
               }
             }
