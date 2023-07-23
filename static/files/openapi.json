@@ -1,1951 +1,2567 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "go-stac-server",
     "description": "Searchable spatiotemporal metadata catalog",
+    "title": "go-stac-server",
     "version": "1.0.0"
   },
   "paths": {
     "/": {
       "get": {
-        "tags": [
-          "Core"
-        ],
+        "description": "Returns the root STAC Catalog or STAC Collection that is the entry point\nfor users to browse with STAC Browser or for search engines to crawl.\n\nThe landing page provides links to the\nAPI definition (link relations `service-desc` and `service-doc`)\nand the STAC records such as collections/catalogs (link relation `child`)\nor items (link relation `item`).",
+        "operationId": "getLandingPage",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/LandingPage"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
         "summary": "Landing Page",
-        "description": "Endpoint.",
-        "operationId": "Landing_Page__get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      }
-    },
-    "/conformance": {
-      "get": {
         "tags": [
           "Core"
-        ],
-        "summary": "Conformance Classes",
-        "description": "Endpoint.",
-        "operationId": "Conformance_Classes_conformance_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
+        ]
       }
     },
     "/collections": {
       "get": {
-        "tags": [
-          "Core"
-        ],
-        "summary": "Get Collections",
-        "description": "Endpoint.",
-        "operationId": "Get_Collections_collections_get",
+        "description": "A body of Feature Collections that belong or are used together with additional links.\nRequest may not return the full set of metadata per Feature Collection.",
+        "operationId": "getCollections",
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Transaction Extension"
-        ],
-        "summary": "Update Collection",
-        "description": "Endpoint.",
-        "operationId": "Update_Collection_collections_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "title": "Request Data"
-              }
-            }
+            "$ref": "#/components/responses/Collections"
           },
-          "required": true
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+        "summary": "the feature collections in the dataset",
+        "tags": [
+          "Features"
+        ]
       },
       "post": {
-        "tags": [
-          "Transaction Extension"
-        ],
-        "summary": "Create Collection",
         "description": "Endpoint.",
         "operationId": "Create_Collection_collections_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "title": "Request Data"
+                "$ref": "#/components/schemas/collection"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
               }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/collections/{collection_id}": {
-      "get": {
-        "tags": [
-          "Core"
-        ],
-        "summary": "Get Collection",
-        "description": "Endpoint.",
-        "operationId": "Get_Collection_collections__collection_id__get",
-        "parameters": [
-          {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
             },
-            "name": "collection_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/exception"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      },
-      "delete": {
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "Create Collection",
         "tags": [
           "Transaction Extension"
+        ]
+      },
+      "put": {
+        "description": "Update a collections object",
+        "operationId": "updateCollection",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/collection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/exception"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
-        "summary": "Delete Collection",
-        "description": "Endpoint.",
+        "summary": "Update Collection",
+        "tags": [
+          "Transaction Extension"
+        ]
+      }
+    },
+    "/collections/{collectionId}": {
+      "delete": {
+        "description": "Use this method to delete an existing Collection",
         "operationId": "Delete_Collection_collections__collection_id__delete",
         "parameters": [
           {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
-            },
-            "name": "collection_id",
-            "in": "path"
+            "$ref": "#/components/parameters/collectionId"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/exception"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      }
-    },
-    "/collections/{collection_id}/items": {
-      "get": {
-        "tags": [
-          "Core"
-        ],
-        "summary": "Get Itemcollection",
-        "description": "Endpoint.",
-        "operationId": "Get_ItemCollection_collections__collection_id__items_get",
-        "parameters": [
+        },
+        "security": [
           {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
-            },
-            "name": "collection_id",
-            "in": "path"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "title": "Limit",
-              "default": 10
-            },
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Bbox"
-            },
-            "name": "bbox",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Datetime"
-            },
-            "name": "datetime",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Token"
-            },
-            "name": "token",
-            "in": "query"
+            "BearerAuth": []
           }
         ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/geo+json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
+        "summary": "Delete Collection",
         "tags": [
           "Transaction Extension"
-        ],
-        "summary": "Create Item",
-        "description": "Endpoint.",
-        "operationId": "Create_Item_collections__collection_id__items_post",
+        ]
+      },
+      "get": {
+        "description": "A single Feature Collection for the given `collectionId`.\nRequest this endpoint to get a full list of metadata for the Feature Collection.",
+        "operationId": "describeCollection",
         "parameters": [
           {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
-            },
-            "name": "collection_id",
-            "in": "path"
+            "$ref": "#/components/parameters/collectionId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Collection"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "describe the feature collection with id `collectionId`",
+        "tags": [
+          "Features"
+        ]
+      }
+    },
+    "/collections/{collectionId}/items": {
+      "get": {
+        "description": "Fetch features of the feature collection with id `collectionId`.",
+        "operationId": "getFeatures",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/bbox"
+          },
+          {
+            "$ref": "#/components/parameters/datetime"
+          },
+          {
+            "$ref": "#/components/parameters/filter"
+          },
+          {
+            "$ref": "#/components/parameters/filter-lang"
+          },
+          {
+            "$ref": "#/components/parameters/token"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Features"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "fetch features",
+        "tags": [
+          "Features"
+        ]
+      },
+      "post": {
+        "description": "create a new STAC Item r Items in an ItemCollection in a specific collection",
+        "operationId": "postFeature",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
           }
         ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
+                "oneOf": [
                   {
-                    "$ref": "#/components/schemas/Item"
+                    "$ref": "#/components/schemas/item"
                   },
                   {
-                    "$ref": "#/components/schemas/ItemCollection"
+                    "$ref": "#/components/schemas/itemCollection"
                   }
-                ],
-                "title": "Item"
+                ]
               }
             }
           }
         },
         "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/item"
+                }
+              }
+            },
+            "description": "Status of the create request.",
+            "headers": {
+              "ETag": {
+                "description": "A string to ensure the item has not been modified",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Location": {
+                "description": "The URL of the newly added resource (i.e. path of the resource end point)",
+                "schema": {
+                  "format": "url",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/item"
+                }
+              }
+            },
+            "description": "The item was accepted for asynchronous action"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "add a new STAC Item or Items in an ItemCollection to a collection",
+        "tags": [
+          "Transaction Extension"
+        ]
+      }
+    },
+    "/collections/{collectionId}/items/{itemId}": {
+      "delete": {
+        "description": "Use this method to delete an existing Feature",
+        "operationId": "deleteFeature",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          }
+        ],
+        "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
               }
-            }
+            },
+            "description": "Successful Response"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/exception"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      }
-    },
-    "/collections/{collection_id}/items/{item_id}": {
-      "get": {
-        "tags": [
-          "Core"
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
         ],
-        "summary": "Get Item",
-        "description": "Endpoint.",
+        "summary": "Delete Item",
+        "tags": [
+          "Transaction Extension"
+        ]
+      },
+      "get": {
+        "description": "Fetch the feature with id `itemId` in the feature collection\nwith id `collectionId`.",
         "operationId": "Get_Item_collections__collection_id__items__item_id__get",
         "parameters": [
           {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
-            },
-            "name": "collection_id",
-            "in": "path"
+            "$ref": "#/components/parameters/collectionId"
           },
           {
-            "description": "Item ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Item Id",
-              "description": "Item ID"
-            },
-            "name": "item_id",
-            "in": "path"
+            "$ref": "#/components/parameters/itemId"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/geo+json": {
-                "schema": {}
-              }
-            }
+            "$ref": "#/components/responses/Feature"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
           },
           "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
           }
-        }
+        },
+        "summary": "fetch a single feature",
+        "tags": [
+          "Features"
+        ]
       },
       "put": {
+        "description": "Use this method to update an existing feature. Requires the entire GeoJSON  description be submitted.",
+        "operationId": "updateFeature",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/collectionId"
+          },
+          {
+            "$ref": "#/components/parameters/itemId"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatch"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/item"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/item"
+                }
+              }
+            },
+            "description": "The item was replaced",
+            "headers": {
+              "ETag": {
+                "description": "An updated string to track changes",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The item was accepted for asynchronous action"
+          },
+          "204": {
+            "description": "The item was replaced",
+            "headers": {
+              "ETag": {
+                "description": "An updated string to track changes",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "412": {
+            "$ref": "#/components/responses/PreconditionFailed"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "summary": "update an existing feature by Id with a complete item definition",
         "tags": [
           "Transaction Extension"
-        ],
-        "summary": "Update Item",
-        "description": "Endpoint.",
-        "operationId": "Update_Item_collections__collection_id__items__item_id__put",
-        "parameters": [
-          {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
-            },
-            "name": "collection_id",
-            "in": "path"
-          },
-          {
-            "description": "Item ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Item Id",
-              "description": "Item ID"
-            },
-            "name": "item_id",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Item"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Transaction Extension"
-        ],
-        "summary": "Delete Item",
-        "description": "Endpoint.",
-        "operationId": "Delete_Item_collections__collection_id__items__item_id__delete",
-        "parameters": [
-          {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
-            },
-            "name": "collection_id",
-            "in": "path"
-          },
-          {
-            "description": "Item ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Item Id",
-              "description": "Item ID"
-            },
-            "name": "item_id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+        ]
       }
     },
-    "/search": {
+    "/collections/{collectionId}/queryables": {
       "get": {
-        "tags": [
-          "Core"
-        ],
-        "summary": "Search",
-        "description": "Endpoint.",
-        "operationId": "Search_search_get",
+        "description": "This endpoint returns a list of variable terms that can be used in CQL2 expressions. The\nprecise definition of this can be found in the OGC API - Features - Part 3: Filtering and the\nCommon Query Language (CQL) specification.",
+        "operationId": "getQueryablesForCollection",
         "parameters": [
           {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Collections"
-            },
-            "name": "collections",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Ids"
-            },
-            "name": "ids",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Bbox"
-            },
-            "name": "bbox",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Intersects"
-            },
-            "name": "intersects",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Datetime"
-            },
-            "name": "datetime",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "title": "Limit",
-              "default": 10
-            },
-            "name": "limit",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Query"
-            },
-            "name": "query",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Sortby"
-            },
-            "name": "sortby",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Fields"
-            },
-            "name": "fields",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Token"
-            },
-            "name": "token",
-            "in": "query"
-          },
-          {
-            "required": false,
-            "schema": {
-              "type": "string",
-              "title": "Filter"
-            },
-            "name": "filter",
-            "in": "query"
+            "$ref": "#/components/parameters/collectionId"
           }
         ],
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/geo+json": {
-                "schema": {}
-              }
-            }
+            "$ref": "#/components/responses/Queryables"
           },
           "422": {
-            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/exception"
                 }
               }
-            }
+            },
+            "description": "Validation Error"
           }
-        }
-      },
-      "post": {
-        "tags": [
-          "Core"
-        ],
-        "summary": "Search",
-        "description": "Endpoint.",
-        "operationId": "Search_search_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchPostRequest"
-              }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/geo+json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/queryables": {
-      "get": {
+        "summary": "Get the JSON Schema defining the list of variable terms that can be used in CQL2 expressions.",
         "tags": [
           "Filter Extension"
-        ],
-        "summary": "Queryables",
-        "description": "Endpoint.",
-        "operationId": "Queryables_queryables_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          }
-        }
+        ]
       }
     },
-    "/collections/{collection_id}/queryables": {
+    "/conformance": {
       "get": {
-        "tags": [
-          "Filter Extension"
-        ],
-        "summary": "Collection Queryables",
-        "description": "Endpoint.",
-        "operationId": "Collection_Queryables_collections__collection_id__queryables_get",
-        "parameters": [
-          {
-            "description": "Collection ID",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Collection Id",
-              "description": "Collection ID"
-            },
-            "name": "collection_id",
-            "in": "path"
-          }
-        ],
+        "description": "A list of all conformance classes specified in a standard that the\nserver conforms to.",
+        "operationId": "getConformanceDeclaration",
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
+            "$ref": "#/components/responses/ConformanceDeclaration"
           },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
           }
-        }
-      }
-    },
-    "/collections/{collection_id}/bulk_items": {
-      "post": {
-        "tags": [
-          "Bulk Transaction Extension"
-        ],
-        "summary": "Bulk Create Item",
-        "description": "Endpoint.",
-        "operationId": "Bulk_Create_Item_collections__collection_id__bulk_items_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Items"
-              }
-            }
-          },
-          "required": true
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string",
-                  "title": "Response Bulk Create Item Collections  Collection Id  Bulk Items Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
+        "summary": "information about specifications that this API conforms to",
+        "tags": [
+          "Core"
+        ]
       }
     },
     "/healthz": {
       "get": {
-        "tags": [
-          "Service Health"
-        ],
-        "summary": "Check health of service",
         "description": "Check health of service",
         "operationId": "healthz__get",
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {}
               }
-            }
+            },
+            "description": "Successful Response"
           }
-        }
+        },
+        "summary": "Check health of service",
+        "tags": [
+          "Service Health"
+        ]
       }
     },
     "/metrics": {
       "get": {
-        "tags": [
-          "Service Health"
-        ],
-        "summary": "Prometheus metrics",
-        "description": "",
+        "description": "Publish prometheus metrics about the performance of the server",
         "operationId": "metrics__get",
         "responses": {
           "200": {
-            "description": "Successful Response",
             "content": {
               "text/plain": {
                 "schema": {}
               }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Prometheus metrics",
+        "tags": [
+          "Service Health"
+        ]
+      }
+    },
+    "/queryables": {
+      "get": {
+        "description": "This endpoint returns a list of variable terms that can be used in CQL2 expressions. The\nprecise definition of this can be found in the OGC API - Features - Part 3: Filtering and the\nCommon Query Language (CQL2) specification.",
+        "operationId": "getQueryables",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Queryables"
+          }
+        },
+        "summary": "Get the JSON Schema defining the list of variable terms that can be used in CQL2 expressions.",
+        "tags": [
+          "Filter Extension"
+        ]
+      }
+    },
+    "/search": {
+      "get": {
+        "description": "Retrieve Items matching filters. Intended as a shorthand API for simple\nqueries.",
+        "operationId": "getItemSearch",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/bbox"
+          },
+          {
+            "$ref": "#/components/parameters/intersects"
+          },
+          {
+            "$ref": "#/components/parameters/datetime"
+          },
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/ids"
+          },
+          {
+            "$ref": "#/components/parameters/collectionsArray"
+          },
+          {
+            "$ref": "#/components/parameters/sortby"
+          },
+          {
+            "$ref": "#/components/parameters/fields"
+          },
+          {
+            "$ref": "#/components/parameters/filter"
+          },
+          {
+            "$ref": "#/components/parameters/filter-lang"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/itemCollection"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A feature collection."
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Search STAC items with simple filtering.",
+        "tags": [
+          "Item Search"
+        ]
+      },
+      "post": {
+        "description": "It is recommended that clients use POST for querying, especially when using the intersects or filter parameters, for two reasons:\n\n1. In practice, the allowed size for an HTTP GET request is significantly less than that allowed for a POST request, so if a large geometry is used in the query it may cause a GET request to fail.\n\n2. The parameters for a GET request must be escaped properly, making it more difficult to construct when using JSON parameters.\n\n### Selecting which fields to return\nBy default, STAC API endpoints that return Item objects return every field of those Items. However, Item objects can have hundreds of fields, or large geometries, and even smaller Item objects can add up when large numbers of them are in results. Frequently, not all fields in an Item are used, so this option provides a mechanism to request that servers explicitly include or exclude certain fields.\n\n### Filtering with CQL2\nThe Filter extension provides an expressive mechanism for searching based on Item attributes using CQL2 queries.\n\n**Example**: _CQL-JSON_\n```json\n{\n  \"filter-lang\": \"cql2-json\",\n  \"filter\": {\n    \"op\": \"and\",\n    \"args\": [\n      {\n        \"op\": \">\",\n        \"args\": [ { \"property\": \"sentinel:data_coverage\" }, 50 ]\n      },\n      {\n        \"op\": \"<\",\n        \"args\": [ { \"property\": \"eo:cloud_cover\" }, 10 ]\n      }\n    ]\n  }\n}\n```\n\nFor additional CQL2 examples see the [STAC Filter Extension Docs](https://github.com/stac-api-extensions/filter).\n\n### Sorting results\nThe `sortby` attribute allows sorting by user-defined fields. Only string, numeric, and datetime attributes of Item (id and collection only) or Item Properties (any attributes) may be used to sort results.\n\nFields may be sorted in ascending or descending order. The `sortby` value is an array, so multiple sort fields can be defined which will be used to sort the data in the order provided (e.g., first by datetime, then by eo:cloud_cover).",
+        "operationId": "postItemSearch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "description": "The search criteria",
+                "properties": {
+                  "bbox": {
+                    "$ref": "#/components/schemas/bbox"
+                  },
+                  "collections": {
+                    "$ref": "#/components/schemas/collections",
+                    "description": "An array of collection ids",
+                    "examples": [
+                      [
+                        "sentinel-1"
+                      ]
+                    ],
+                    "type": "array"
+                  },
+                  "datetime": {
+                    "$ref": "#/components/schemas/datetimeInterval"
+                  },
+                  "fields": {
+                    "$ref": "#/components/schemas/fields"
+                  },
+                  "filter": {
+                    "$ref": "#/components/schemas/filter-cql2-json"
+                  },
+                  "filter-crs": {
+                    "$ref": "#/components/schemas/filter-crs"
+                  },
+                  "filter-lang": {
+                    "$ref": "#/components/schemas/filter-lang"
+                  },
+                  "ids": {
+                    "$ref": "#/components/schemas/ids"
+                  },
+                  "intersects": {
+                    "$ref": "#/components/schemas/geometryGeoJSON"
+                  },
+                  "limit": {
+                    "$ref": "#/components/schemas/limit"
+                  },
+                  "query": {
+                    "$ref": "#/components/schemas/query"
+                  },
+                  "sortby": {
+                    "description": "An array of objects containing a property name and sort direction\n",
+                    "examples": [
+                      {
+                        "direction": "asc",
+                        "field": "properties.eo:cloud_cover"
+                      },
+                      {
+                        "direction": "desc",
+                        "field": "id"
+                      }
+                    ],
+                    "items": {
+                      "properties": {
+                        "direction": {
+                          "default": "asc",
+                          "enum": [
+                            "asc",
+                            "desc"
+                          ],
+                          "type": "string"
+                        },
+                        "field": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "field",
+                        "direction"
+                      ],
+                      "type": "object"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
             }
           }
-        }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/geo+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/itemCollection"
+                }
+              },
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "A feature collection."
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "summary": "Search STAC items with full-featured filtering.",
+        "tags": [
+          "Item Search"
+        ]
       }
     }
   },
+  "servers": [
+    {
+      "url": "/api/stac/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Core"
+    },
+    {
+      "name": "Features"
+    },
+    {
+      "name": "Item Search"
+    },
+    {
+      "description": "STAC-specific operations to add, remove, and edit items within OGC API - Features collections.",
+      "name": "Transaction Extension"
+    },
+    {
+      "name": "Filter Extension"
+    }
+  ],
   "components": {
-    "schemas": {
-      "FilterLang": {
-        "type": "string",
-        "enum": [
-          "cql-json",
-          "cql2-json",
-          "cql2-text"
-        ],
-        "title": "FilterLang",
-        "description": "Choices for filter-lang value in a POST request.\n\nBased on\nhttps://github.com/stac-api-extensions/filter#queryables\n\nNote the addition of cql2-json, which is used by the pgstac backend,\nbut is not included in the spec above."
+    "parameters": {
+      "IfMatch": {
+        "description": "Only take the action if the ETag of the item still matches",
+        "in": "header",
+        "name": "If-Match",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
+      "IfMatchOptional": {
+        "description": "Only take the action if the ETag of the item still matches",
+        "in": "header",
+        "name": "If-Match",
+        "required": false,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "bbox": {
+        "description": "Only features that have a geometry that intersects the bounding box are selected.\nThe bounding box is provided as four or six numbers, depending on\nwhether the coordinate reference system includes a vertical axis (height\nor depth):\n\n* Lower left corner, coordinate axis 1\n* Lower left corner, coordinate axis 2\n* Minimum value, coordinate axis 3 (optional)\n* Upper right corner, coordinate axis 1\n* Upper right corner, coordinate axis 2\n* Maximum value, coordinate axis 3 (optional)\n\nThe coordinate reference system of the values is WGS 84\nlongitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84).\n\nFor WGS 84 longitude/latitude the values are in most cases the sequence\nof minimum longitude, minimum latitude, maximum longitude and maximum\nlatitude. However, in cases where the box spans the antimeridian the\nfirst value (west-most box edge) is larger than the third value\n(east-most box edge).\n\nIf the vertical axis is included, the third and the sixth number are\nthe bottom and the top of the 3-dimensional bounding box.\n\n_Example_: The bounding box of the New Zealand Exclusive Economic Zone in\nWGS 84 (from 160.6°E to 170°W and from 55.95°S to 25.89°S) would be\nrepresented in JSON as `[160.6, -55.95, -170, -25.89]` and in a query as\n`bbox=160.6,-55.95,-170,-25.89`.",
+        "explode": false,
+        "in": "query",
+        "name": "bbox",
+        "required": false,
+        "schema": {
+          "items": {
+            "type": "number"
+          },
+          "oneOf": [
+            {
+              "maxItems": 4,
+              "minItems": 4
             },
-            "type": "array",
-            "title": "Detail"
+            {
+              "maxItems": 6,
+              "minItems": 6
+            }
+          ],
+          "type": "array"
+        },
+        "style": "form"
+      },
+      "collectionId": {
+        "description": "local identifier of a collection",
+        "in": "path",
+        "name": "collectionId",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "collectionsArray": {
+        "description": "Array of Collection IDs to include in the search for items.\nOnly Item objects in one of the provided collections will be searched",
+        "example": [
+          "sentinel-1"
+        ],
+        "explode": false,
+        "in": "query",
+        "name": "collections",
+        "required": false,
+        "schema": {
+          "type": "array"
+        }
+      },
+      "datetime": {
+        "description": "Either a date-time or an interval, open or closed. Date and time expressions\nadhere to RFC 3339. Open intervals are expressed using double-dots.\n\nExamples:\n\n* A date-time: \"2018-02-12T23:20:50Z\"\n* A closed interval: \"2018-02-12T00:00:00Z/2018-03-18T12:31:12Z\"\n* Open intervals: \"2018-02-12T00:00:00Z/..\" or \"../2018-03-18T12:31:12Z\"\n\nOnly features that have a temporal property that intersects the value of\n`datetime` are selected.\n\nIf a feature has multiple temporal properties all relevant temporal properties are used to determine the extent.",
+        "explode": false,
+        "in": "query",
+        "name": "datetime",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "style": "form"
+      },
+      "fields": {
+        "description": "Determines the shape of the features in the response",
+        "example": "id,type,-geometry,bbox,properties,-links,-assets",
+        "explode": false,
+        "in": "query",
+        "name": "fields",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "style": "form",
+        "x-stac-api-fragment": "fields"
+      },
+      "filter": {
+        "description": "A CQL2 filter expression for filtering items",
+        "example": "sentinel:data_coverage > 50 OR eo:cloud_cover < 10",
+        "in": "query",
+        "name": "filter",
+        "required": false,
+        "schema": {
+          "oneOf": [
+            {
+              "$ref": "#/components/schemas/filter-cql2-json"
+            },
+            {
+              "$ref": "#/components/schemas/filter-cql2-text"
+            }
+          ]
+        },
+        "x-stac-api-fragment": "filter"
+      },
+      "filter-crs": {
+        "description": "The CRS used by spatial predicates in the filter parameter. In STAC API, only value that must be accepted\nis _\"http://www.opengis.net/def/crs/OGC/1.3/CRS84\"_.",
+        "in": "query",
+        "name": "filter-crs",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/filter-crs"
+        },
+        "x-stac-api-fragment": "filter"
+      },
+      "filter-lang": {
+        "description": "The CQL2 filter encoding that the `filter` value uses",
+        "in": "query",
+        "name": "filter-lang",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/filter-lang"
+        },
+        "x-stac-api-fragment": "filter"
+      },
+      "ids": {
+        "description": "Array of Item ids to return.",
+        "explode": false,
+        "in": "query",
+        "name": "ids",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/ids"
+        }
+      },
+      "intersects": {
+        "description": "The optional intersects parameter filters the result Items in the same way as bbox, only with\na GeoJSON Geometry rather than a bbox.",
+        "explode": false,
+        "in": "query",
+        "name": "intersects",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/geometryGeoJSON"
+        },
+        "style": "form"
+      },
+      "itemId": {
+        "description": "local identifier of a feature",
+        "in": "path",
+        "name": "itemId",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "limit": {
+        "description": "The optional limit parameter recommends the number of items that should be present in the response document.\n\nOnly items are counted that are on the first level of the collection in the response document.\n\nMinimum = 1. Maximum = 10000.",
+        "explode": false,
+        "in": "query",
+        "name": "limit",
+        "required": false,
+        "schema": {
+          "default": 10,
+          "maximum": 10000,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "style": "form"
+      },
+      "sortby": {
+        "description": "An array of property names, prefixed by either `+`` for ascending or\n`-`` for descending. If no prefix is provided, `+`` is assumed.",
+        "example": "+id,-properties.eo:cloud_cover",
+        "explode": false,
+        "in": "query",
+        "name": "sortby",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "style": "form",
+        "x-stac-api-fragment": "sort"
+      },
+      "token": {
+        "description": "navigational token used for paging through large sets of items",
+        "in": "query",
+        "name": "token",
+        "required": false,
+        "schema": {
+          "title": "Token",
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/exception"
+            }
           }
         },
-        "type": "object",
-        "title": "HTTPValidationError"
+        "description": "The request was malformed or semantically invalid"
       },
-      "Item": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "Feature"
-            ],
-            "title": "Type"
-          },
-          "stac_version": {
-            "type": "string",
-            "title": "Stac Version"
-          },
-          "stac_extensions": {
-            "items": {
+      "Collection": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/collection"
+            }
+          }
+        },
+        "description": "Information about the feature collection with id `collectionId`.\n\nThe response contains a link to the items in the collection\n(path `/collections/{collectionId}/items`, link relation `items`)\nas well as key information about the collection. This information\nincludes:\n\n* A local identifier for the collection that is unique for the dataset;\n* A list of coordinate reference systems (CRS) in which geometries may be returned by the server. The first CRS is the default coordinate reference system (the default is always WGS 84 with axis order longitude/latitude);\n* An optional title and description for the collection;\n* An optional extent that can be used to provide an indication of the spatial and temporal extent of the collection - typically derived from the data;\n* An optional indicator about the type of the items in the collection (the default value, if the indicator is not provided, is \"feature\")."
+      },
+      "Collections": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/collections"
+            }
+          }
+        },
+        "description": "The feature collections shared by this API.\n\nThe dataset is organized as one or more feature collections. This resource\nprovides information about and access to the collections.\n\nThe response contains the list of collections. For each collection, a link\nto the items in the collection (path `/collections/{collectionId}/items`,\nlink relation `items`) as well as key information about the collection.\nThis information includes:\n\n* A local identifier for the collection that is unique for the dataset;\n* A list of coordinate reference systems (CRS) in which geometries may be returned by the server. The first CRS is the default coordinate reference system (the default is always WGS 84 with axis order longitude/latitude);\n* An optional title and description for the collection;\n* An optional extent that can be used to provide an indication of the spatial and temporal extent of the collection - typically derived from the data;\n* An optional indicator about the type of the items in the collection (the default value, if the indicator is not provided, is \"feature\")."
+      },
+      "ConformanceDeclaration": {
+        "content": {
+          "application/json": {
+            "example": {
+              "conformsTo": [
+                "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/core",
+                "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/oas30",
+                "http://www.opengis.net/spec/ogcapi-features-1/1.0/conf/geojson"
+              ]
+            },
+            "schema": {
+              "$ref": "#/components/schemas/conformanceClasses"
+            }
+          }
+        },
+        "description": "The URIs of all conformance classes supported by the server.\n\nTo support \"generic\" clients that want to access multiple\nOGC API Features implementations - and not \"just\" a specific\nAPI / server, the server declares the conformance\nclasses it implements and conforms to."
+      },
+      "Error": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/exception"
+            }
+          }
+        },
+        "description": "An error occurred."
+      },
+      "Feature": {
+        "content": {
+          "application/geo+json": {
+            "schema": {
+              "$ref": "#/components/schemas/item"
+            }
+          }
+        },
+        "description": "fetch the feature with id `featureId` in the feature collection\nwith id `collectionId`"
+      },
+      "Features": {
+        "content": {
+          "application/geo+json": {
+            "schema": {
+              "$ref": "#/components/schemas/featureCollectionGeoJSON"
+            }
+          }
+        },
+        "description": "The response is a document consisting of features in the collection. The features included in the response are determined by the server based on the query parameters of the request. To support access to larger collections without overloading the client, the API supports paged access with links to the next page, if more features are selected than the page size.\nThe `bbox` and `datetime` parameter can be used to select only a subset of the features in the collection (the features that are in the bounding box or time interval). The `bbox` parameter matches all features in the collection that are not associated with a location, too. The `datetime` parameter matches all features in the collection that are not associated with a time stamp or interval, too.\nThe `limit` parameter may be used to control the subset of the selected features that should be returned in the response, the page size.\nEach page may include information about the number of returned features (`context.returned`) as well as links to support paging (link relation `next`)."
+      },
+      "LandingPage": {
+        "content": {
+          "application/json": {
+            "example": {
+              "conformsTo": [
+                "https://api.stacspec.org/v1.0.0/core"
+              ],
+              "description": "Catalog of Copernicus Sentinel 1 and 2 imagery.",
+              "id": "sentinel",
+              "links": [
+                {
+                  "href": "http://stac.server/",
+                  "rel": "self",
+                  "title": "this document",
+                  "type": "application/json"
+                },
+                {
+                  "href": "http://stac.server/openapi.json",
+                  "rel": "service-desc",
+                  "title": "the API definition",
+                  "type": "application/vnd.oai.openapi+json;version=3.0"
+                },
+                {
+                  "href": "http://stac.server/docs/",
+                  "rel": "service-doc",
+                  "title": "the API documentation",
+                  "type": "text/html"
+                },
+                {
+                  "href": "http://stac.server/catalogs/sentinel-1",
+                  "rel": "child",
+                  "title": "Sentinel 1 Catalog",
+                  "type": "application/json"
+                },
+                {
+                  "href": "http://stac.server/catalogs/sentinel-2",
+                  "rel": "child",
+                  "title": "Sentinel 2 Catalog",
+                  "type": "application/json"
+                }
+              ],
+              "stac_version": "1.0.0",
+              "title": "Copernicus Sentinel Imagery",
+              "type": "Catalog"
+            },
+            "schema": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/catalog"
+                },
+                {
+                  "$ref": "#/components/schemas/conformanceClasses"
+                }
+              ]
+            }
+          }
+        },
+        "description": "The landing page provides links to the API definition\n(link relations `service-desc` and `service-doc`)."
+      },
+      "NotFound": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/exception"
+            }
+          }
+        },
+        "description": "The requested URI was not found."
+      },
+      "PreconditionFailed": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/exception"
+            }
+          }
+        },
+        "description": "Some condition specified by the request could not be met in the server"
+      },
+      "Queryables": {
+        "content": {
+          "application/schema+json": {
+            "schema": {
+              "type": "object"
+            }
+          }
+        },
+        "description": "A JSON Schema defining the Queryables allowed in CQL2 expressions"
+      }
+    },
+    "schemas": {
+      "assets": {
+        "additionalProperties": {
+          "properties": {
+            "description": {
+              "description": "Multi-line description to explain the asset.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.",
+              "examples": [
+                "Small 256x256px PNG thumbnail for a preview."
+              ],
               "type": "string"
             },
-            "type": "array",
-            "title": "Stac Extensions"
-          },
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "geometry": {
-            "type": "object",
-            "title": "Geometry"
-          },
-          "bbox": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
+            "href": {
+              "description": "Link to the asset object",
+              "examples": [
+                "http://stac.server/api/stac/v1/catalog/collections/cs/items/CS3-20160503_132130_04/thumb.png"
+              ],
+              "format": "url",
+              "type": "string"
             },
-            "type": "array",
-            "title": "Bbox"
-          },
-          "properties": {
-            "type": "object",
-            "title": "Properties"
-          },
-          "links": {
-            "items": {
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Links"
-          },
-          "assets": {
-            "type": "object",
-            "title": "Assets"
-          },
-          "collection": {
-            "type": "string",
-            "title": "Collection"
-          }
-        },
-        "type": "object",
-        "title": "Item"
-      },
-      "ItemCollection": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "FeatureCollection"
-            ],
-            "title": "Type"
-          },
-          "features": {
-            "items": {
-              "$ref": "#/components/schemas/Item"
-            },
-            "type": "array",
-            "title": "Features"
-          },
-          "links": {
-            "items": {
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Links"
-          },
-          "context": {
-            "additionalProperties": {
-              "type": "integer"
-            },
-            "type": "object",
-            "title": "Context"
-          }
-        },
-        "type": "object",
-        "title": "ItemCollection"
-      },
-      "Items": {
-        "properties": {
-          "items": {
-            "type": "object",
-            "title": "Items",
-            "extra": {}
-          }
-        },
-        "type": "object",
-        "title": "Items",
-        "description": "A group of STAC Item objects, in the form of a dictionary from Item.id -> Item."
-      },
-      "LineString": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "LineString"
-            ],
-            "title": "Type"
-          },
-          "coordinates": {
-            "items": {
-              "anyOf": [
-                {
-                  "items": [
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
-                  "type": "array",
-                  "maxItems": 2,
-                  "minItems": 2
-                },
-                {
-                  "items": [
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
-                  "type": "array",
-                  "maxItems": 3,
-                  "minItems": 3
-                }
-              ]
-            },
-            "type": "array",
-            "minItems": 2,
-            "title": "Coordinates"
-          },
-          "bbox": {
-            "anyOf": [
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 4,
-                "minItems": 4
-              },
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 6,
-                "minItems": 6
-              }
-            ],
-            "title": "Bbox"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "coordinates"
-        ],
-        "title": "LineString",
-        "description": "LineString Model"
-      },
-      "MultiLineString": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "MultiLineString"
-            ],
-            "title": "Type"
-          },
-          "coordinates": {
-            "items": {
+            "roles": {
+              "description": "Purposes of the asset",
+              "examples": [
+                "thumbnail"
+              ],
               "items": {
-                "anyOf": [
-                  {
-                    "items": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ],
-                    "type": "array",
-                    "maxItems": 2,
-                    "minItems": 2
-                  },
-                  {
-                    "items": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ],
-                    "type": "array",
-                    "maxItems": 3,
-                    "minItems": 3
-                  }
-                ]
-              },
-              "type": "array",
-              "minItems": 2
-            },
-            "type": "array",
-            "title": "Coordinates"
-          },
-          "bbox": {
-            "anyOf": [
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 4,
-                "minItems": 4
-              },
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 6,
-                "minItems": 6
-              }
-            ],
-            "title": "Bbox"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "coordinates"
-        ],
-        "title": "MultiLineString",
-        "description": "MultiLineString Model"
-      },
-      "MultiPoint": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "MultiPoint"
-            ],
-            "title": "Type"
-          },
-          "coordinates": {
-            "items": {
-              "anyOf": [
-                {
-                  "items": [
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
-                  "type": "array",
-                  "maxItems": 2,
-                  "minItems": 2
-                },
-                {
-                  "items": [
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    },
-                    {
-                      "type": "number"
-                    }
-                  ],
-                  "type": "array",
-                  "maxItems": 3,
-                  "minItems": 3
-                }
-              ]
-            },
-            "type": "array",
-            "title": "Coordinates"
-          },
-          "bbox": {
-            "anyOf": [
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 4,
-                "minItems": 4
-              },
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 6,
-                "minItems": 6
-              }
-            ],
-            "title": "Bbox"
-          }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "coordinates"
-        ],
-        "title": "MultiPoint",
-        "description": "MultiPoint Model"
-      },
-      "MultiPolygon": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "MultiPolygon"
-            ],
-            "title": "Type"
-          },
-          "coordinates": {
-            "items": {
-              "items": {
-                "items": {
-                  "anyOf": [
-                    {
-                      "items": [
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ],
-                      "type": "array",
-                      "maxItems": 2,
-                      "minItems": 2
-                    },
-                    {
-                      "items": [
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "number"
-                        },
-                        {
-                          "type": "number"
-                        }
-                      ],
-                      "type": "array",
-                      "maxItems": 3,
-                      "minItems": 3
-                    }
-                  ]
-                },
-                "type": "array",
-                "minItems": 4
+                "type": "string"
               },
               "type": "array"
             },
-            "type": "array",
-            "title": "Coordinates"
+            "title": {
+              "description": "Displayed title",
+              "examples": [
+                "Thumbnail"
+              ],
+              "type": "string"
+            },
+            "type": {
+              "description": "Media type of the asset",
+              "examples": [
+                "image/png"
+              ],
+              "type": "string"
+            }
           },
-          "bbox": {
-            "anyOf": [
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 4,
-                "minItems": 4
-              },
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 6,
-                "minItems": 6
-              }
-            ],
-            "title": "Bbox"
-          }
+          "required": [
+            "href"
+          ],
+          "type": "object"
         },
-        "type": "object",
-        "required": [
-          "type",
-          "coordinates"
-        ],
-        "title": "MultiPolygon",
-        "description": "MultiPolygon Model"
+        "type": "object"
       },
-      "Point": {
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "Point"
-            ],
-            "title": "Type"
-          },
-          "coordinates": {
-            "anyOf": [
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 2,
-                "minItems": 2
-              },
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 3,
-                "minItems": 3
-              }
-            ],
-            "title": "Coordinates"
-          },
-          "bbox": {
-            "anyOf": [
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 4,
-                "minItems": 4
-              },
-              {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 6,
-                "minItems": 6
-              }
-            ],
-            "title": "Bbox"
-          }
+      "bbox": {
+        "description": "Only features that have a geometry that intersects the bounding box are\nselected. The bounding box is provided as four or six numbers,\ndepending on whether the coordinate reference system includes a\nvertical axis (elevation or depth):\n\n* Lower left corner, coordinate axis 1\n* Lower left corner, coordinate axis 2\n* Lower left corner, coordinate axis 3 (optional)\n* Upper right corner, coordinate axis 1\n* Upper right corner, coordinate axis 2\n* Upper right corner, coordinate axis 3 (optional)\n\nThe coordinate reference system of the values is WGS84\nlongitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84).\n\nFor WGS84 longitude/latitude the values are in most cases the sequence\nof minimum longitude, minimum latitude, maximum longitude and maximum\nlatitude. However, in cases where the box spans the antimeridian the\nfirst value (west-most box edge) is larger than the third value\n(east-most box edge).\n\nIf a feature has multiple spatial geometry properties, it is the\ndecision of the server whether only a single spatial geometry property\nis used to determine the extent or all relevant geometries.\n\nExample: The bounding box of the New Zealand Exclusive Economic Zone in\nWGS 84 (from 160.6°E to 170°W and from 55.95°S to 25.89°S) would be\nrepresented in JSON as `[160.6, -55.95, -170, -25.89]` and in a query as\n`bbox=160.6,-55.95,-170,-25.89`.",
+        "examples": [
+          -110,
+          39.5,
+          -105,
+          40.5
+        ],
+        "items": {
+          "type": "number"
         },
-        "type": "object",
-        "required": [
-          "type",
-          "coordinates"
-        ],
-        "title": "Point",
-        "description": "Point Model"
+        "maxItems": 6,
+        "minItems": 4,
+        "type": "array"
       },
-      "Polygon": {
+      "catalog": {
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "Polygon"
-            ],
-            "title": "Type"
+          "description": {
+            "type": "string"
           },
-          "coordinates": {
+          "id": {
+            "type": "string"
+          },
+          "links": {
+            "$ref": "#/components/schemas/links"
+          },
+          "stac_extensions": {
             "items": {
-              "items": {
-                "anyOf": [
-                  {
-                    "items": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ],
-                    "type": "array",
-                    "maxItems": 2,
-                    "minItems": 2
-                  },
-                  {
-                    "items": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "number"
-                      }
-                    ],
-                    "type": "array",
-                    "maxItems": 3,
-                    "minItems": 3
-                  }
+              "anyOf": [
+                {
+                  "format": "uri",
+                  "title": "Reference to a JSON Schema",
+                  "type": "string"
+                },
+                {
+                  "title": "Reference to a core extension",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "STAC extensions",
+            "type": "array",
+            "uniqueItems": true
+          },
+          "stac_version": {
+            "examples": [
+              "1.0.0"
+            ],
+            "title": "STAC version",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "Catalog"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "stac_version",
+          "type",
+          "id",
+          "description",
+          "links"
+        ],
+        "type": "object"
+      },
+      "collection": {
+        "examples": [
+          {
+            "description": "Sentinel-2 is a wide-swath, high-resolution, multi-spectral\nimaging mission...\n",
+            "extent": {
+              "spatial": {
+                "bbox": [
+                  [
+                    -180,
+                    -56,
+                    180,
+                    83
+                  ]
                 ]
               },
-              "type": "array",
-              "minItems": 4
+              "temporal": {
+                "interval": [
+                  [
+                    "2015-06-23T00:00:00Z",
+                    "2019-07-10T13:44:56Z"
+                  ]
+                ]
+              }
             },
-            "type": "array",
-            "title": "Coordinates"
-          },
-          "bbox": {
-            "anyOf": [
+            "id": "Sentinel-2",
+            "keywords": [
+              "copernicus",
+              "esa",
+              "eu",
+              "msi",
+              "radiance",
+              "sentinel"
+            ],
+            "license": "proprietary",
+            "links": [
               {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 4,
-                "minItems": 4
+                "href": "http://stac.server/api/stac/v1/collections/Sentinel-2",
+                "rel": "self",
+                "type": "application/json"
               },
               {
-                "items": [
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  },
-                  {
-                    "type": "number"
-                  }
-                ],
-                "type": "array",
-                "maxItems": 6,
-                "minItems": 6
+                "href": "http://stac.server/api/stac/v1/collections",
+                "rel": "root",
+                "type": "application/json"
+              },
+              {
+                "href": "https://scihub.copernicus.eu/twiki/pub/SciHubWebPortal/TermsConditions/Sentinel_Data_Terms_and_Conditions.pdf",
+                "rel": "license",
+                "title": "Legal notice on the use of Copernicus Sentinel Data and Service Information",
+                "type": "application/pdf"
               }
             ],
-            "title": "Bbox"
+            "providers": [
+              {
+                "name": "ESA",
+                "roles": [
+                  "producer",
+                  "licensor"
+                ],
+                "url": "https://sentinel.esa.int/web/sentinel/user-guides/sentinel-2-msi"
+              }
+            ],
+            "stac_extensions": [],
+            "stac_version": "1.0.0",
+            "summaries": {
+              "constellation": [
+                "sentinel-2"
+              ],
+              "datetime": {
+                "max": "2019-07-10T13:44:56Z",
+                "min": "2015-06-23T00:00:00Z"
+              },
+              "eo:bands": [
+                [
+                  {
+                    "center_wavelength": 4.439,
+                    "common_name": "coastal",
+                    "name": "B1"
+                  },
+                  {
+                    "center_wavelength": 4.966,
+                    "common_name": "blue",
+                    "name": "B2"
+                  },
+                  {
+                    "center_wavelength": 5.6,
+                    "common_name": "green",
+                    "name": "B3"
+                  },
+                  {
+                    "center_wavelength": 6.645,
+                    "common_name": "red",
+                    "name": "B4"
+                  },
+                  {
+                    "center_wavelength": 7.039,
+                    "name": "B5"
+                  },
+                  {
+                    "center_wavelength": 7.402,
+                    "name": "B6"
+                  },
+                  {
+                    "center_wavelength": 7.825,
+                    "name": "B7"
+                  },
+                  {
+                    "center_wavelength": 8.351,
+                    "common_name": "nir",
+                    "name": "B8"
+                  },
+                  {
+                    "center_wavelength": 8.648,
+                    "name": "B8A"
+                  },
+                  {
+                    "center_wavelength": 9.45,
+                    "name": "B9"
+                  },
+                  {
+                    "center_wavelength": 1.3735,
+                    "name": "B10"
+                  },
+                  {
+                    "center_wavelength": 1.6137,
+                    "common_name": "swir16",
+                    "name": "B11"
+                  },
+                  {
+                    "center_wavelength": 2.2024,
+                    "common_name": "swir22",
+                    "name": "B12"
+                  }
+                ]
+              ],
+              "eo:gsd": [
+                10,
+                30,
+                60
+              ],
+              "instruments": [
+                "msi"
+              ],
+              "platform": [
+                "sentinel-2a",
+                "sentinel-2b"
+              ],
+              "sci:citation": [
+                "Copernicus Sentinel data [Year]"
+              ],
+              "view:off_nadir": {
+                "max": 100,
+                "min": 0
+              },
+              "view:sun_elevation": {
+                "max": 89.9,
+                "min": 6.78
+              }
+            },
+            "title": "Sentinel-2 MSI: MultiSpectral Instrument, Level-1C",
+            "type": "Collection"
           }
-        },
-        "type": "object",
-        "required": [
-          "type",
-          "coordinates"
         ],
-        "title": "Polygon",
-        "description": "Polygon Model"
-      },
-      "PostFieldsExtension": {
         "properties": {
-          "include": {
+          "description": {
+            "description": "Detailed multi-line description to fully explain the catalog or collection.\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.",
+            "type": "string"
+          },
+          "extent": {
+            "$ref": "#/components/schemas/extent"
+          },
+          "id": {
+            "description": "identifier of the collection used, for example, in URIs",
+            "type": "string"
+          },
+          "keywords": {
+            "description": "List of keywords describing the collection.",
             "items": {
               "type": "string"
             },
-            "type": "array",
-            "uniqueItems": true,
-            "title": "Include",
-            "default": []
+            "type": "array"
           },
+          "license": {
+            "$ref": "#/components/schemas/license"
+          },
+          "links": {
+            "$ref": "#/components/schemas/links"
+          },
+          "providers": {
+            "$ref": "#/components/schemas/providers"
+          },
+          "stac_extensions": {
+            "items": {
+              "anyOf": [
+                {
+                  "format": "uri",
+                  "title": "Reference to a JSON Schema",
+                  "type": "string"
+                },
+                {
+                  "title": "Reference to a core extension",
+                  "type": "string"
+                }
+              ]
+            },
+            "title": "STAC extensions",
+            "type": "array",
+            "uniqueItems": true
+          },
+          "stac_version": {
+            "examples": [
+              "1.0.0"
+            ],
+            "title": "STAC version",
+            "type": "string"
+          },
+          "summaries": {
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "items": {
+                    "description": "A value of any type."
+                  },
+                  "title": "Set of values",
+                  "type": "array"
+                },
+                {
+                  "description": "By default, only ranges with a minimum and a maximum value can\nbe specified. Ranges can be specified for ordinal values only,\nwhich means they need to have a rank order. Therefore, ranges\ncan only be specified for numbers and some special types of\nstrings. Examples: grades (A to F), dates or times.\nImplementors are free to add other derived statistical values\nto the object, for example `mean` or `stddev`.",
+                  "properties": {
+                    "max": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    },
+                    "min": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "min",
+                    "max"
+                  ],
+                  "title": "Statistics",
+                  "type": "object"
+                }
+              ]
+            },
+            "description": "Summaries are either a unique set of all available values *or*\nstatistics. Statistics by default only specify the range (minimum\nand maximum values), but can optionally be accompanied by additional\nstatistical values. The range can specify the potential range of\nvalues, but it is recommended to be as precise as possible. The set\nof values must contain at least one element and it is strongly\nrecommended to list all values. It is recommended to list as many\nproperties as reasonable so that consumers get a full overview of\nthe Collection. Properties that are covered by the Collection\nspecification (e.g. `providers` and `license`) may not be repeated\nin the summaries.",
+            "type": "object"
+          },
+          "title": {
+            "description": "human readable title of the collection",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "Collection"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "stac_version",
+          "type",
+          "id",
+          "description",
+          "license",
+          "extent",
+          "links"
+        ],
+        "type": "object"
+      },
+      "collections": {
+        "properties": {
+          "collections": {
+            "items": {
+              "$ref": "#/components/schemas/collection"
+            },
+            "type": "array"
+          },
+          "links": {
+            "$ref": "#/components/schemas/links"
+          }
+        },
+        "required": [
+          "links",
+          "collections"
+        ],
+        "type": "object"
+      },
+      "conformanceClasses": {
+        "properties": {
+          "conformsTo": {
+            "description": "A list of all conformance classes implemented by the server. In addition to the STAC-specific conformance classes, all OGC-related conformance classes listed at `GET /conformance` must be listed here. This entry should mirror what `GET /conformance` returns, if implemented.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "conformsTo"
+        ],
+        "type": "object"
+      },
+      "datetime": {
+        "description": "The searchable date and time of the assets, in UTC.\nIt is formatted according to [RFC 3339, section 5.6](https://tools.ietf.org/html/rfc3339#section-5.6).\n`null` is allowed, but requires `start_datetime` and `end_datetime` from common metadata to be set.",
+        "examples": [
+          "2018-02-12T00:00:00Z"
+        ],
+        "format": "date-time",
+        "nullable": true,
+        "type": "string"
+      },
+      "datetimeInterval": {
+        "description": "Either a date-time or an interval, open or closed. Date and time expressions\nadhere to RFC 3339. Open intervals are expressed using double-dots.\n\nExamples:\n\n* A date-time: \"2018-02-12T23:20:50Z\"\n* A closed interval: \"2018-02-12T00:00:00Z/2018-03-18T12:31:12Z\"\n* Open intervals: \"2018-02-12T00:00:00Z/..\" or \"../2018-03-18T12:31:12Z\"\n\nOnly features that have a temporal property that intersects the value of\n`datetime` are selected.\n\nIf a feature has multiple temporal properties, it is the decision of the\nserver whether only a single temporal property is used to determine\nthe extent or all relevant temporal properties.",
+        "examples": [
+          "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+        ],
+        "type": "string"
+      },
+      "exception": {
+        "description": "Information about the exception: an error code plus an optional description.",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object"
+      },
+      "extent": {
+        "description": "The extent of the features in the collection. In the Core only spatial and temporal\nextents are specified. Extensions may add additional members to represent other\nextents, for example, thermal or pressure ranges.\n\nThe first item in the array describes the overall extent of\nthe data. All subsequent items describe more precise extents,\ne.g., to identify clusters of data.\nClients only interested in the overall extent will only need to\naccess the first item in each array.",
+        "properties": {
+          "spatial": {
+            "description": "The spatial extent of the features in the collection.",
+            "properties": {
+              "bbox": {
+                "description": "One or more bounding boxes that describe the spatial extent of the dataset.\n\nThe first bounding box describes the overall spatial\nextent of the data. All subsequent bounding boxes describe\nmore precise bounding boxes, e.g., to identify clusters of data.\nClients only interested in the overall spatial extent will\nonly need to access the first item in each array.",
+                "items": {
+                  "description": "Each bounding box is provided as four or six numbers, depending on\nwhether the coordinate reference system includes a vertical axis\n(height or depth):\n\n* Lower left corner, coordinate axis 1\n* Lower left corner, coordinate axis 2\n* Minimum value, coordinate axis 3 (optional)\n* Upper right corner, coordinate axis 1\n* Upper right corner, coordinate axis 2\n* Maximum value, coordinate axis 3 (optional)\n\nThe coordinate reference system of the values is WGS 84 longitude/latitude\n(http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless a different coordinate\nreference system is specified in `crs`.\n\nFor WGS 84 longitude/latitude the values are in most cases the sequence of\nminimum longitude, minimum latitude, maximum longitude and maximum latitude.\nHowever, in cases where the box spans the antimeridian the first value\n(west-most box edge) is larger than the third value (east-most box edge).\n\nIf the vertical axis is included, the third and the sixth number are\nthe bottom and the top of the 3-dimensional bounding box.\n\nIf a feature has multiple spatial geometry properties, it is the decision of the\nserver whether only a single spatial geometry property is used to determine\nthe extent or all relevant geometries.",
+                  "examples": [
+                    -180,
+                    -90,
+                    180,
+                    90
+                  ],
+                  "items": {
+                    "type": "number"
+                  },
+                  "maxItems": 6,
+                  "minItems": 4,
+                  "type": "array"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "crs": {
+                "default": "http://www.opengis.net/def/crs/OGC/1.3/CRS84",
+                "description": "Coordinate reference system of the coordinates in the spatial extent\n(property `bbox`). The default reference system is WGS 84 longitude/latitude.\nIn the Core this is the only supported coordinate reference system.\nExtensions may support additional coordinate reference systems and add\nadditional enum values.",
+                "enum": [
+                  "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "bbox"
+            ],
+            "type": "object"
+          },
+          "temporal": {
+            "description": "The temporal extent of the features in the collection.",
+            "properties": {
+              "interval": {
+                "description": "One or more time intervals that describe the temporal extent of the dataset.\n\nThe first time interval describes the overall\ntemporal extent of the data. All subsequent time intervals describe\nmore precise time intervals, e.g., to identify clusters of data.\nClients only interested in the overall extent will only need\nto access the first item in each array.",
+                "items": {
+                  "description": "Begin and end times of the time interval. The timestamps\nare in the coordinate reference system specified in `trs`. By default\nthis is the Gregorian calendar.\n\nThe value `null` is supported and indicates an open time interval.",
+                  "examples": [
+                    "2011-11-11T12:22:11Z",
+                    null
+                  ],
+                  "items": {
+                    "format": "date-time",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "trs": {
+                "default": "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian",
+                "description": "Coordinate reference system of the coordinates in the temporal extent\n(property `interval`). The default reference system is the Gregorian calendar.\nIn the Core this is the only supported temporal reference system.\nExtensions may support additional temporal reference systems and add\nadditional enum values.",
+                "enum": [
+                  "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "interval"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "spatial",
+          "temporal"
+        ],
+        "type": "object"
+      },
+      "featureCollectionGeoJSON": {
+        "properties": {
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/featureGeoJSON"
+            },
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "FeatureCollection"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "features"
+        ],
+        "type": "object"
+      },
+      "featureGeoJSON": {
+        "properties": {
+          "geometry": {
+            "$ref": "#/components/schemas/geometryGeoJSON"
+          },
+          "properties": {
+            "nullable": true,
+            "type": "object"
+          },
+          "type": {
+            "enum": [
+              "Feature"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "geometry",
+          "properties"
+        ],
+        "type": "object"
+      },
+      "fields": {
+        "description": "The include and exclude members specify an array of\nproperty names that are either included or excluded\nfrom the result, respectively. If both include and\nexclude are specified, include takes precedence.\nValues should include the full JSON path of the property.\n",
+        "examples": [
+          {
+            "exclude": [
+              "geometry",
+              "properties.datetime"
+            ],
+            "include": [
+              "id",
+              "properties.eo:cloud_cover"
+            ]
+          }
+        ],
+        "properties": {
           "exclude": {
             "items": {
               "type": "string"
             },
-            "type": "array",
-            "uniqueItems": true,
-            "title": "Exclude",
-            "default": []
+            "type": "array"
+          },
+          "include": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           }
         },
-        "type": "object",
-        "title": "PostFieldsExtension",
-        "description": "FieldsExtension.\n\nAttributes:\n    include: set of fields to include.\n    exclude: set of fields to exclude."
+        "type": "object"
       },
-      "SearchPostRequest": {
-        "properties": {
-          "collections": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Collections",
-            "extra": {}
+      "filter-cql2-json": {
+        "$ref": "./cql2.yml#/components/schemas/booleanExpression"
+      },
+      "filter-cql2-text": {
+        "description": "A CQL2 filter expression in the \"cql2-text\" encoding.\n",
+        "type": "string"
+      },
+      "filter-crs": {
+        "description": "The coordinate reference system (CRS) used by spatial literals in the \"filter\" value.  The only value that STAC APIs must\naccept is \"http://www.opengis.net/def/crs/OGC/1.3/CRS84\".\n",
+        "examples": [
+          "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+        ],
+        "format": "uri",
+        "type": "string"
+      },
+      "filter-lang": {
+        "default": "cql2-text",
+        "description": "The CQL2 filter encoding that the \"filter\" value uses.\n",
+        "enum": [
+          "cql2-text",
+          "cql2-json"
+        ],
+        "type": "string"
+      },
+      "geometryGeoJSON": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/pointGeoJSON"
           },
-          "ids": {
+          {
+            "$ref": "#/components/schemas/multipointGeoJSON"
+          },
+          {
+            "$ref": "#/components/schemas/linestringGeoJSON"
+          },
+          {
+            "$ref": "#/components/schemas/multilinestringGeoJSON"
+          },
+          {
+            "$ref": "#/components/schemas/polygonGeoJSON"
+          },
+          {
+            "$ref": "#/components/schemas/multipolygonGeoJSON"
+          },
+          {
+            "$ref": "#/components/schemas/geometrycollectionGeoJSON"
+          }
+        ]
+      },
+      "geometrycollectionGeoJSON": {
+        "properties": {
+          "geometries": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/geometryGeoJSON"
             },
-            "type": "array",
-            "title": "Ids",
-            "extra": {}
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "GeometryCollection"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "geometries"
+        ],
+        "type": "object"
+      },
+      "ids": {
+        "description": "Array of Item ids to return.",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "item": {
+        "description": "A GeoJSON Feature augmented with foreign members that contain values relevant to a STAC entity",
+        "examples": [
+          {
+            "assets": {
+              "analytic": {
+                "href": "http://stac.server/api/stac/v1/static-catalog/CS3/20160503_132130_04/analytic.tif",
+                "title": "4-Band Analytic",
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+              },
+              "thumbnail": {
+                "href": "http://stac.server/api/stac/v1/static-catalog/CS3/20160503_132130_04/thumbnail.png",
+                "title": "Thumbnail",
+                "type": "image/png"
+              }
+            },
+            "bbox": [
+              -122.59750209,
+              37.48803556,
+              -122.2880486,
+              37.613537207
+            ],
+            "collection": "CS3",
+            "geometry": {
+              "coordinates": [
+                [
+                  [
+                    -122.308150179,
+                    37.488035566
+                  ],
+                  [
+                    -122.597502109,
+                    37.538869539
+                  ],
+                  [
+                    -122.576687533,
+                    37.613537207
+                  ],
+                  [
+                    -122.2880486,
+                    37.562818007
+                  ],
+                  [
+                    -122.308150179,
+                    37.488035566
+                  ]
+                ]
+              ],
+              "type": "Polygon"
+            },
+            "id": "CS3-20160503_132131_05",
+            "links": [
+              {
+                "href": "http://stac.server/api/stac/v1/collections/CS3/items/20160503_132130_04",
+                "rel": "self",
+                "type": "application/geo+json"
+              },
+              {
+                "href": "http://stac.server/api/stac/v1/collections",
+                "rel": "root",
+                "type": "application/json"
+              },
+              {
+                "href": "http://stac.server/api/stac/v1/collections/CS3",
+                "rel": "parent",
+                "type": "application/json"
+              },
+              {
+                "href": "http://stac.server/api/stac/v1/collections/CS3",
+                "rel": "collection",
+                "type": "application/json"
+              }
+            ],
+            "properties": {
+              "datetime": "2016-05-03T13:22:30.040Z",
+              "eo:bands": [],
+              "eo:cloud_cover": 0.12,
+              "eo:gsd": 0.512,
+              "instruments": [
+                "cool_sensor_v1"
+              ],
+              "license": "PDDL-1.0",
+              "platform": "coolsat2",
+              "providers": [
+                {
+                  "name": "CoolSat",
+                  "roles": [
+                    "producer",
+                    "licensor"
+                  ],
+                  "url": "https://stac.server/api/stac/v1/"
+                }
+              ],
+              "title": "A CS3 item",
+              "view:off_nadir": 1.4,
+              "view:sun_azimuth": 168.7,
+              "view:sun_elevation": 33.4
+            },
+            "stac_extensions": [
+              "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+              "https://stac-extensions.github.io/view/v1.0.0/schema.json"
+            ],
+            "stac_version": "1.0.0",
+            "type": "Feature"
+          }
+        ],
+        "properties": {
+          "assets": {
+            "$ref": "#/components/schemas/assets"
           },
           "bbox": {
-            "anyOf": [
-              {
-                "items": [
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  }
-                ],
-                "type": "array",
-                "maxItems": 4,
-                "minItems": 4
-              },
-              {
-                "items": [
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  },
-                  {
-                    "anyOf": [
-                      {
-                        "type": "number"
-                      },
-                      {
-                        "type": "integer"
-                      }
-                    ]
-                  }
-                ],
-                "type": "array",
-                "maxItems": 6,
-                "minItems": 6
-              }
-            ],
-            "title": "Bbox",
-            "extra": {}
+            "$ref": "#/components/schemas/bbox"
           },
-          "intersects": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Point"
-              },
-              {
-                "$ref": "#/components/schemas/MultiPoint"
-              },
-              {
-                "$ref": "#/components/schemas/LineString"
-              },
-              {
-                "$ref": "#/components/schemas/MultiLineString"
-              },
-              {
-                "$ref": "#/components/schemas/Polygon"
-              },
-              {
-                "$ref": "#/components/schemas/MultiPolygon"
-              }
-            ],
-            "title": "Intersects",
-            "extra": {}
+          "geometry": {
+            "$ref": "#/components/schemas/geometryGeoJSON"
           },
-          "datetime": {
-            "type": "string",
-            "title": "Datetime",
-            "extra": {}
+          "id": {
+            "description": "Provider identifier, a unique ID.",
+            "type": "string"
           },
-          "limit": {
-            "type": "integer",
-            "maximum": 10000,
-            "minimum": 1,
-            "title": "Limit",
-            "default": 10,
-            "extra": {}
+          "links": {
+            "$ref": "#/components/schemas/links"
           },
-          "conf": {
-            "type": "object",
-            "title": "Conf",
-            "extra": {}
+          "properties": {
+            "$ref": "#/components/schemas/properties"
           },
-          "query": {
-            "additionalProperties": {
-              "type": "object"
-            },
-            "type": "object",
-            "title": "Query",
-            "extra": {}
-          },
-          "sortby": {
-            "items": {
-              "$ref": "#/components/schemas/SortExtension"
-            },
-            "type": "array",
-            "title": "Sortby",
-            "extra": {}
-          },
-          "fields": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PostFieldsExtension"
-              }
-            ],
-            "title": "Fields",
-            "default": {
-              "include": [],
-              "exclude": []
-            },
-            "extra": {}
-          },
-          "token": {
-            "type": "string",
-            "title": "Token",
-            "extra": {}
-          },
-          "filter": {
-            "type": "object",
-            "title": "Filter",
-            "extra": {}
-          },
-          "filter-crs": {
-            "type": "string",
-            "title": "Filter-Crs",
-            "extra": {}
-          },
-          "filter-lang": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/FilterLang"
-              }
-            ],
-            "default": "cql-json",
-            "extra": {}
-          }
-        },
-        "type": "object",
-        "title": "SearchPostRequest",
-        "description": "Search model.\n\nOverrides the validation for datetime from the base request model."
-      },
-      "SortDirections": {
-        "type": "string",
-        "enum": [
-          "asc",
-          "desc"
-        ],
-        "title": "SortDirections",
-        "description": "An enumeration."
-      },
-      "SortExtension": {
-        "properties": {
-          "field": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Field"
-          },
-          "direction": {
-            "$ref": "#/components/schemas/SortDirections"
-          }
-        },
-        "type": "object",
-        "required": [
-          "field",
-          "direction"
-        ],
-        "title": "SortExtension",
-        "description": "https://github.com/radiantearth/stac-api-spec/tree/master/extensions/sort#sort-api-extension"
-      },
-      "ValidationError": {
-        "properties": {
-          "loc": {
+          "stac_extensions": {
             "items": {
               "anyOf": [
                 {
+                  "format": "uri",
+                  "title": "Reference to a JSON Schema",
                   "type": "string"
                 },
                 {
-                  "type": "integer"
+                  "title": "Reference to a core extension",
+                  "type": "string"
                 }
               ]
             },
+            "title": "STAC extensions",
             "type": "array",
-            "title": "Location"
+            "uniqueItems": true
           },
-          "msg": {
-            "type": "string",
-            "title": "Message"
+          "stac_version": {
+            "examples": [
+              "1.0.0"
+            ],
+            "title": "STAC version",
+            "type": "string"
           },
           "type": {
-            "type": "string",
-            "title": "Error Type"
+            "description": "The GeoJSON type",
+            "enum": [
+              "Feature"
+            ],
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
-          "loc",
-          "msg",
+          "stac_version",
+          "id",
+          "type",
+          "geometry",
+          "bbox",
+          "links",
+          "properties",
+          "assets"
+        ],
+        "type": "object"
+      },
+      "itemCollection": {
+        "description": "A GeoJSON FeatureCollection augmented with foreign members that contain values relevant to a STAC entity",
+        "properties": {
+          "context": {
+            "properties": {
+              "context": {
+                "properties": {
+                  "limit": {
+                    "examples": [
+                      5
+                    ],
+                    "minimum": 0,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "returned": {
+                    "examples": [
+                      1
+                    ],
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "returned"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/item"
+            },
+            "type": "array"
+          },
+          "links": {
+            "description": "An array of links. Can be used for pagination, e.g. by providing a link with the `next` relation type.",
+            "examples": [
+              {
+                "href": "http://stac.server/search?next=noaa-emergency-response:20200307aC0865530w361200",
+                "rel": "next",
+                "type": "application/geo+json"
+              }
+            ],
+            "items": {
+              "$ref": "#/components/schemas/link"
+            },
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "FeatureCollection"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "features",
           "type"
         ],
-        "title": "ValidationError"
+        "type": "object"
+      },
+      "license": {
+        "description": "License(s) of the data as a SPDX\n[License identifier](https://spdx.org/licenses/). Alternatively, use\n`proprietary` if the license is not on the SPDX license list or\n`various` if multiple licenses apply. In these two cases links to the\nlicense texts SHOULD be added, see the `license` link relation type.\n\nNon-SPDX licenses SHOULD add a link to the license text with the\n`license` relation in the links section. The license text MUST NOT be\nprovided as a value of this field. If there is no public license URL\navailable, it is RECOMMENDED to host the license text and\nlink to it.",
+        "examples": [
+          "Apache-2.0"
+        ],
+        "type": "string"
+      },
+      "limit": {
+        "default": 10,
+        "description": "The optional limit parameter limits the number of items that are presented in the response document.\n\nIf the limit parameter value is greater than advertised limit maximum, the server must return the\nmaximum possible number of items, rather than responding with an error.\n\nMinimum = 1. Maximum = 10000. Default = 10.",
+        "examples": [
+          10
+        ],
+        "maximum": 10000,
+        "minimum": 1,
+        "type": "integer"
+      },
+      "linestringGeoJSON": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "LineString"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "link": {
+        "properties": {
+          "body": {
+            "description": "For POST requests, the resource can specify the HTTP body as a JSON object.",
+            "type": "object"
+          },
+          "headers": {
+            "description": "Object key values pairs they map to headers",
+            "examples": [
+              {
+                "Accept": "application/json"
+              }
+            ],
+            "type": "object"
+          },
+          "href": {
+            "description": "The location of the resource",
+            "format": "uri",
+            "type": "string"
+          },
+          "merge": {
+            "default": false,
+            "description": "This is only valid when the server is responding to POST request.\n\nIf merge is true, the client is expected to merge the body value\ninto the current request body before following the link.\nThis avoids passing large post bodies back and forth when following\nlinks, particularly for navigating pages through the `POST /search`\nendpoint.\n\nNOTE: To support form encoding it is expected that a client be able\nto merge in the key value pairs specified as JSON\n`{\"next\": \"token\"}` will become `&next=token`.",
+            "type": "boolean"
+          },
+          "method": {
+            "default": "GET",
+            "description": "Specifies the HTTP method that the resource expects",
+            "enum": [
+              "GET",
+              "POST"
+            ],
+            "type": "string"
+          },
+          "rel": {
+            "description": "Relation type of the link",
+            "type": "string"
+          },
+          "title": {
+            "description": "Title of the resource",
+            "type": "string"
+          },
+          "type": {
+            "description": "The media type of the resource",
+            "type": "string"
+          }
+        },
+        "required": [
+          "href",
+          "rel"
+        ],
+        "title": "Link",
+        "type": "object"
+      },
+      "links": {
+        "items": {
+          "$ref": "#/components/schemas/link"
+        },
+        "type": "array"
+      },
+      "multilinestringGeoJSON": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "type": "array"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "MultiLineString"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "multipointGeoJSON": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "MultiPoint"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "multipolygonGeoJSON": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "minItems": 4,
+                "type": "array"
+              },
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "MultiPolygon"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "pointGeoJSON": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "Point"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "polygonGeoJSON": {
+        "properties": {
+          "coordinates": {
+            "items": {
+              "items": {
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "type": "array"
+              },
+              "minItems": 4,
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "type": {
+            "enum": [
+              "Polygon"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "coordinates"
+        ],
+        "type": "object"
+      },
+      "properties": {
+        "additionalProperties": {
+          "description": "Any additional properties added in via Item specification or extensions."
+        },
+        "description": "provides the core metadata fields plus extensions",
+        "properties": {
+          "datetime": {
+            "$ref": "#/components/schemas/datetime"
+          }
+        },
+        "required": [
+          "datetime"
+        ],
+        "type": "object"
+      },
+      "providers": {
+        "description": "A list of providers, which may include all organizations capturing or processing the data or the hosting provider. Providers should be listed in chronological order with the most recent provider being the last element of the list.",
+        "items": {
+          "properties": {
+            "description": {
+              "description": "Multi-line description to add further provider information such as processing details for processors and producers, hosting details for hosts or basic contact information.\n\n[CommonMark 0.29](http://commonmark.org/) syntax MAY be used for rich text representation.",
+              "type": "string"
+            },
+            "name": {
+              "description": "The name of the organization or the individual.",
+              "type": "string"
+            },
+            "roles": {
+              "description": "Roles of the provider.\n\nThe provider\"s role(s) can be one or more of the following\nelements:\n\n* licensor: The organization that is licensing the dataset under\n  the license specified in the collection\"s license field.\n* producer: The producer of the data is the provider that\n  initially captured and processed the source data, e.g. ESA for\n  Sentinel-2 data.\n* processor: A processor is any provider who processed data to a\n  derived product.\n* host: The host is the actual provider offering the data on their\n  storage. There should be no more than one host, specified as last\n  element of the list.",
+              "items": {
+                "enum": [
+                  "producer",
+                  "licensor",
+                  "processor",
+                  "host"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "url": {
+              "description": "Homepage on which the provider describes the dataset and publishes contact information.",
+              "format": "url",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "title": "Provider",
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "query": {
+        "additionalProperties": {
+          "$ref": "#/components/schemas/queryProp"
+        },
+        "description": "Define which properties to query and the operations to apply",
+        "examples": [
+          {
+            "datetime": {
+              "gte": "2018-02-12T00:00:00Z",
+              "lte": "2018-03-18T12:31:12Z"
+            },
+            "eo:cloud_cover": {
+              "gt": 8,
+              "lt": 50
+            },
+            "eo:gsd": {
+              "in": [
+                10,
+                20
+              ]
+            },
+            "pl:item_type": {
+              "startsWith": "PSScene"
+            },
+            "platform": {
+              "eq": "landsat-8"
+            },
+            "product": {
+              "in": [
+                "foo",
+                "bar",
+                "baz"
+              ]
+            }
+          }
+        ],
+        "type": "object"
+      },
+      "queryProp": {
+        "anyOf": [
+          {
+            "description": "if the object doesn\"t contain any of the operators, it is equivalent to using the equals operator"
+          },
+          {
+            "description": "Match using an operator",
+            "properties": {
+              "contains": {
+                "description": "Find items with a property that contains the specified literal string, e.g., matches \".*<STRING>.*\". A case-insensitive comparison must be performed.",
+                "type": "string"
+              },
+              "endsWith": {
+                "description": "Find items with a property that ends with the specified string. A case-insensitive comparison must be performed.",
+                "type": "string"
+              },
+              "eq": {
+                "description": "Find items with a property that is equal to the specified value. For strings, a case-insensitive comparison must be performed.",
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "gt": {
+                "description": "Find items with a property value greater than the specified value.",
+                "oneOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "gte": {
+                "description": "Find items with a property value greater than or equal the specified value.",
+                "oneOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "in": {
+                "description": "Find items with a property that equals at least one entry in the specified array. A case-insensitive comparison must be performed.",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              "lt": {
+                "description": "Find items with a property value less than the specified value.",
+                "oneOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "lte": {
+                "description": "Find items with a property value less than or equal the specified value.",
+                "oneOf": [
+                  {
+                    "format": "date-time",
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "neq": {
+                "description": "Find items that *don\"t* contain the specified value. For strings, a case-insensitive comparison must be performed.",
+                "nullable": true,
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "startsWith": {
+                "description": "Find items with a property that begins with the specified string. A case-insensitive comparison must be performed.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        ],
+        "description": "Apply query operations to a specific property"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
       }
     }
   }

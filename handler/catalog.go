@@ -77,7 +77,7 @@ func Catalog(c *fiber.Ctx) error {
 		Rel:   "service-doc",
 		Type:  "text/html",
 		Title: "OpenAPI service documentation",
-		Href:  fmt.Sprintf("%s/doc/openapi.html", baseUrl),
+		Href:  fmt.Sprintf("%s/doc/", baseUrl),
 	})
 
 	// get a list of all collections
