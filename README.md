@@ -44,29 +44,19 @@ title="STAC API"
 description="go-stac-server STAC API"
 ```
 
-(PgSTAC)[https://stac-utils.github.io/pgstac/pgstac/] provides the backend database
+[PgSTAC](https://stac-utils.github.io/pgstac/pgstac/) provides the backend database
 and offers several configuration options. See their documentation for specifics on
-what options are available. 
+what options are available.
 
-# Implemented STAC extensions
-
-| Title                                                                    | Scope                     | Version        | Description                                                                                                                                                                                                         |
-|--------------------------------------------------------------------------|---------------------------|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [Accuracy](https://github.com/stac-extensions/accuracy)                  | Collection, Item          | **Unreleased** | Fields to provide estimates of accuracy, both geometric and measurement (e.g., radiometric) accuracy.                                                                                                               |
-| [Alternate Assets](https://github.com/stac-extensions/alternate-assets)  | Asset                     | 1.1.0          | Describes alternate locations and mirrors of assets                                                                                                                                                                 |
-| [Classification](https://github.com/stac-extensions/classification)      | Collection, Item          | 1.1.0          | Describes categorical values and bitfields to give values in a file a certain meaning (classification).                                                                                                             |
-| [Composite](https://github.com/stac-extensions/composite)                | Item                      | **Unreleased** | Defines how virtual assets can be composed from existing assets in STAC                                                                                                                                             |
-| [Electro-Optical](https://github.com/stac-extensions/eo)                 | Collection, Item          | 1.1.0          | Covers electro-optical data that represents a snapshot of the Earth. It could consist of cloud cover and multiple spectral bands, for example visible bands, infrared bands, red edge bands and panchromatic bands. |
-| [Example Links](https://github.com/stac-extensions/example-links)        | Catalog, Collection, Item | **Unreleased** | Allows to provide links to examples, e.g. code snippets.                                                                                                                                                            |
-| [File Info](https://github.com/stac-extensions/file)                     | Catalog, Collection, Item | 2.1.0          | Specifies file-related details such as size, data type and checksum for assets and links in STAC.                                                                                                                   |
-| [Item Assets Definition](https://github.com/stac-extensions/item-assets) | Collection                | 1.0.0          | Provides a way to specify details about what assets may be found in Items belonging to a Collection.                                                                                                                |
-| [Label](https://github.com/stac-extensions/label)                        | Collection, Item          | 1.0.1          | Items that relate labeled AOIs with source imagery.                                                                                                                                                                 |
-| [Processing](https://github.com/stac-extensions/processing)              | Collection, Item          | 1.1.0          | Indicates from which processing chain data originates and how the data itself has been produced.                                                                                                                    |
-| [Projection](https://github.com/stac-extensions/projection)              | Collection, Item          | 1.1.0          | Provides a way to describe Items whose assets are in a geospatial projection.                                                                                                                                       |
-| [Stats](https://github.com/stac-extensions/stats)                        | Catalog, Collection       | 0.2.0          | Describes the number of items, extensions and assets that are contained in a STAC catalog.                                                                                                                          |
-| [Timestamps](https://github.com/stac-extensions/timestamps)              | Catalog, Collection, Item | 1.1.0          | Allows to specify numerous additional timestamps for assets and metadata.                                                                                                                                           |
-| [Versioning Indicators](https://github.com/stac-extensions/version)      | Collection, Item          | 1.2.0          | Provides fields and link relation types to provide a version and indicate deprecation.                                                                                                                              |
-| [View Geometry](https://github.com/stac-extensions/view)                 | Collection, Item          | 1.0.0          | View Geometry adds metadata related to angles of sensors and other radiance angles that affect the view of resulting data.                                                                                          |
+| Title                                                             | Version    | Description                                                                                                                    |
+|-------------------------------------------------------------------|------------|--------------------------------------------------------------------------------------------------------------------------------|
+| [Browseable](https://github.com/stac-api-extensions/browseable)   | 1.0.0-rc.3 | Browseable advertises all Items in a STAC API Catalog can be reached by traversing child and item links.                       |
+| [Context](https://github.com/stac-api-extensions/context)         | 1.0.0-rc.2 | Context Extension                                                                                                              |
+| [Fields](https://github.com/stac-api-extensions/fields)           | 1.0.0-rc.3 | The Fields Extensions describes a mechanism to include or exclude certain fields from a response.                              |
+| [Filter](https://github.com/stac-api-extensions/filter)           | 1.0.0-rc.2 | The Filter extension provides an expressive mechanism for searching based on Item attributes.                                  |
+| [Query](https://github.com/stac-api-extensions/query)             | 1.0.0-rc.2 | The Query Extension adds a query parameter that allows additional filtering based on the properties of Item objects.           |
+| [Sort](https://github.com/stac-api-extensions/sort)               | 1.0.0-rc.2 | The Sort Extension that allows the user to define the fields by which to sort results.                                         |
+| [Transaction](https://github.com/stac-api-extensions/transaction) | 1.0.0-rc.2 | The Transaction Extension supports the creation, editing, and deleting of items through POST, PUT, PATCH, and DELETE requests. |
 
 # Errors
 
