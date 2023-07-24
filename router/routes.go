@@ -49,12 +49,12 @@ func SetupRoutes(app *fiber.App) {
 	stacV1.Get("/queryables", handler.Queryables)
 
 	// Transactions extension
-	/*
-		stacV1.Post("/collections", handler.CreateCollection)
-		stacV1.Put("/collections", handler.UpdateCollection)
-		stacV1.Delete("/collections/:collectionId", handler.DeleteCollection)
-		stacV1.Post("/collections/:collectionId/items", handler.CreateItems)
-		stacV1.Delete("/collections/:collectionId/items/:itemId", handler.DeleteItem)
-		stacV1.Put("/collections/:collectionId/items/:itemId", handler.UpdateItem)
-	*/
+	stacV1.Post("/collections", handler.ModifyCollection)
+	stacV1.Put("/collections", handler.ModifyCollection)
+	stacV1.Delete("/collections/:collectionId", handler.DeleteCollection)
+
+	stacV1.Post("/collections/:collectionId/items", handler.CreateItems)
+	//stacV1.Delete("/collections/:collectionId/items/:itemId", handler.DeleteItem)
+	//stacV1.Put("/collections/:collectionId/items/:itemId", handler.UpdateItem)
+	//stacV1.Patch("/collections/:collectionId/items/:itemId", handler.UpdateItem)
 }

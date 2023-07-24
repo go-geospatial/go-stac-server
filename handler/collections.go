@@ -27,11 +27,92 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// ModifyCollection creates a new collection in the database
+// POST /collections
+// PUT /collections
+func ModifyCollection(c *fiber.Ctx) error {
+	ctx := context.Background()
+
+	// validate passed JSON
+	collectionRaw := c.Body()
+	collection := make(map[string]*json.RawMessage)
+
+	if err := json.Unmarshal(collectionRaw, &collection); err != nil {
+		log.Error().Err(err).Str("RequestBody", string(collectionRaw)).Msg("cannot unmarshal provided JSON in CreateCollection")
+		c.Status(fiber.ErrUnprocessableEntity.Code)
+		return c.JSON(stac.Error{
+			Code:        stac.ParameterError,
+			Description: "JSON parse failed; collection must be a valid JSON object",
+		})
+	}
+
+	var id string
+	var err error
+	if id, err = stac.ValidateID(c, collection); err != nil {
+		return err
+	}
+
+	collectionJson, err := json.Marshal(collection)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to marshal collection to JSON")
+		c.Status(fiber.ErrInternalServerError.Code)
+		return c.JSON(stac.Error{
+			Code:        stac.ParameterError,
+			Description: "failed to marshal JSON for collection",
+		})
+	}
+
+	query := "SELECT create_collection($1::text::jsonb)"
+	if c.Method() == "PUT" {
+		log.Info().Msg("updating collection")
+		query = "SELECT update_collection($1::text::jsonb)"
+	}
+
+	pool := database.GetInstance(ctx)
+	if _, err := pool.Exec(ctx, query, collectionJson); err != nil {
+		log.Error().Err(err).Str("id", id).Str("raw", string(collectionRaw)).Msg("failed to create collection")
+		c.Status(fiber.ErrUnprocessableEntity.Code)
+		return c.JSON(stac.Error{
+			Code:        "CreateCollectionFailed",
+			Description: "failed to create collection",
+		})
+	}
+
+	return collectionFromID(c, id)
+}
+
+// DeleteCollection creates a new collection in the database
+// DELETE /collections
+func DeleteCollection(c *fiber.Ctx) error {
+	ctx := context.Background()
+	collectionId := c.Params("collectionId")
+
+	pool := database.GetInstance(ctx)
+	if _, err := pool.Exec(ctx, "SELECT delete_collection($1::text)", collectionId); err != nil {
+		log.Error().Err(err).Str("id", collectionId).Msg("collection not found")
+		c.Status(fiber.ErrNotFound.Code)
+		return c.JSON(stac.Error{
+			Code:        stac.NotFoundError,
+			Description: "collection not found",
+		})
+	}
+
+	// NOTE: we use the error struct here for convenience because it has a suitable structure for the response
+	return c.JSON(stac.Error{
+		Code:        "CollectionDeleted",
+		Description: "the collection was successfully deleted",
+	})
+}
+
 // Collection returns details of a specific collection
 // GET /collections/:collectionId/
 func Collection(c *fiber.Ctx) error {
-	ctx := context.Background()
 	collectionId := c.Params("collectionId")
+	return collectionFromID(c, collectionId)
+}
+
+func collectionFromID(c *fiber.Ctx, collectionId string) error {
+	ctx := context.Background()
 	baseUrl := getBaseUrl(c)
 
 	// get a list of all collections

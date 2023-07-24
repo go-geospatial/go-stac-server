@@ -255,7 +255,7 @@
         ]
       },
       "post": {
-        "description": "create a new STAC Item r Items in an ItemCollection in a specific collection",
+        "description": "create a new STAC Item or Items in an ItemCollection in a specific collection",
         "operationId": "postFeature",
         "parameters": [
           {
@@ -409,6 +409,86 @@
         "tags": [
           "Features"
         ]
+      },
+      "patch": {
+        "summary": "update an existing feature by Id with a partial item definition",
+        "description": "Use this method to update an existing feature. Requires a GeoJSON fragment (containing the fields to be updated) be submitted.",
+        "operationId": "patchFeature",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "tags": [
+          "Transaction Extension"
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IfMatchOptional"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/item"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The item was replaced",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "An updated string to track changes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/item"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The item was accepted for asynchronous action"
+          },
+          "204": {
+            "description": "Status of the update request.",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "A string to ensure the item has not been modified"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/Error"
+          },
+          "default": {
+            "description": "An error occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://api.stacspec.org/v1.0.0-rc.2/ogcapi-features/openapi.yaml#/components/schemas/exception"
+                }
+              }
+            }
+          }
+        }
       },
       "put": {
         "description": "Use this method to update an existing feature. Requires the entire GeoJSON  description be submitted.",
