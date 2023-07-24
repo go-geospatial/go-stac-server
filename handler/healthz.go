@@ -16,12 +16,29 @@
 package handler
 
 import (
+	"context"
+
+	"github.com/go-geospatial/go-stac-server/database"
 	"github.com/gofiber/fiber/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // Collection returns details of a specific collection
 func Healthz(c *fiber.Ctx) error {
+	ctx := context.Background()
+
+	overallHealth := "OK"
+	dbHealth := "OK"
+
+	pool := database.GetInstance(ctx)
+	if err := pool.Ping(ctx); err != nil {
+		log.Error().Err(err).Msg("database ping failed")
+		dbHealth = "FAILED"
+		overallHealth = "FAILED"
+	}
+
 	return c.JSON(map[string]string{
-		"status": "OK",
+		"status":   overallHealth,
+		"database": dbHealth,
 	})
 }
