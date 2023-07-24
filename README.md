@@ -6,8 +6,6 @@ A dynamic stac 1.0.0 server implemented in golang
 1. PostgreSQL 13+
 2. PostGIS 3+
 3. [pgstac](https://github.com/stac-utils/pgstac) schema
-4. go-stac-server
-5. geospatial data
 
 # Quickstart
 
