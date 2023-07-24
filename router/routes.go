@@ -22,11 +22,12 @@ import (
 
 // SetupRoutes setup router api
 func SetupRoutes(app *fiber.App) {
-	// config.js
+	// config.js - used to configure Stac Browser
 	app.Get("/config.js", handler.StacBrowserConfig)
 
 	// healthz
 	app.Get("/healthz", handler.Healthz)
+	// NOTE: prometheus also registers a /metrics endpoint
 
 	// STAC API
 	api := app.Group("api")
@@ -36,10 +37,24 @@ func SetupRoutes(app *fiber.App) {
 	stacV1.Get("/", handler.Catalog)
 	stacV1.Get("/collections", handler.Collections)
 	stacV1.Get("/conformance", handler.Conformance)
-	stacV1.Get("/collections/:id", handler.Collection)
-	stacV1.Get("/collections/:id/items", handler.Items)
+	stacV1.Get("/collections/:collectionId", handler.Collection)
+	stacV1.Get("/collections/:collectionId/items", handler.Items)
 	stacV1.Get("/collections/:collectionId/items/:itemId", handler.Item)
 
 	stacV1.Get("/search", handler.Search)
 	stacV1.Post("/search", handler.Search)
+
+	// Filter Extension
+	stacV1.Get("/collections/:collectionId/queryables", handler.Queryables)
+	stacV1.Get("/queryables", handler.Queryables)
+
+	// Transactions extension
+	/*
+		stacV1.Post("/collections", handler.CreateCollection)
+		stacV1.Put("/collections", handler.UpdateCollection)
+		stacV1.Delete("/collections/:collectionId", handler.DeleteCollection)
+		stacV1.Post("/collections/:collectionId/items", handler.CreateItems)
+		stacV1.Delete("/collections/:collectionId/items/:itemId", handler.DeleteItem)
+		stacV1.Put("/collections/:collectionId/items/:itemId", handler.UpdateItem)
+	*/
 }

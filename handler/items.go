@@ -128,7 +128,7 @@ func Item(c *fiber.Ctx) error {
 func Items(c *fiber.Ctx) error {
 	ctx := context.Background()
 	baseUrl := getBaseUrl(c)
-	collectionId := c.Params("id")
+	collectionId := c.Params("collectionId")
 
 	pool := database.GetInstance(ctx)
 

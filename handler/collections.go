@@ -31,7 +31,7 @@ import (
 // GET /collections/:collectionId/
 func Collection(c *fiber.Ctx) error {
 	ctx := context.Background()
-	collectionId := c.Params("id")
+	collectionId := c.Params("collectionId")
 	baseUrl := getBaseUrl(c)
 
 	// get a list of all collections
