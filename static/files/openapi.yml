@@ -650,14 +650,13 @@ components:
       x-stac-api-fragment: fields
     filter:
       description: A CQL2 filter expression for filtering items
-      example: sentinel:data_coverage > 50 OR eo:cloud_cover < 10
+      example: '{"op":"=","args":[{"property":"id"},"LC08_L1TP_060247_20180905_20180912"]}'
       in: query
       name: filter
       required: false
       schema:
         oneOf:
           - $ref: '#/components/schemas/filter-cql2-json'
-          - $ref: '#/components/schemas/filter-cql2-text'
       x-stac-api-fragment: filter
     filter-crs:
       description: |-
@@ -1459,11 +1458,10 @@ components:
       format: uri
       type: string
     filter-lang:
-      default: cql2-text
+      default: cql2-json
       description: |
         The CQL2 filter encoding that the "filter" value uses.
       enum:
-        - cql2-text
         - cql2-json
       type: string
     geometryGeoJSON:
