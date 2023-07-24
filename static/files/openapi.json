@@ -226,6 +226,9 @@
             "$ref": "#/components/parameters/filter-lang"
           },
           {
+            "$ref": "#/components/parameters/sortby"
+          },
+          {
             "$ref": "#/components/parameters/token"
           }
         ],
@@ -976,7 +979,7 @@
         "style": "form"
       },
       "sortby": {
-        "description": "An array of property names, prefixed by either `+`` for ascending or\n`-`` for descending. If no prefix is provided, `+`` is assumed.",
+        "description": "An array of property names, prefixed by either `+` for ascending or\n`-` for descending. If no prefix is provided, `+` is assumed.",
         "example": "+id,-properties.eo:cloud_cover",
         "explode": false,
         "in": "query",
