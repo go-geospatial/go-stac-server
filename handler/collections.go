@@ -17,17 +17,18 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/go-geospatial/go-stac-server/database"
 	"github.com/go-geospatial/go-stac-server/stac"
+	json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
 )
 
 // Collection returns details of a specific collection
+// GET /collections/:collectionId/
 func Collection(c *fiber.Ctx) error {
 	ctx := context.Background()
 	collectionId := c.Params("id")
@@ -35,7 +36,7 @@ func Collection(c *fiber.Ctx) error {
 
 	// get a list of all collections
 	pool := database.GetInstance(ctx)
-	row := pool.QueryRow(ctx, "SELECT content FROM pgstac.collections WHERE id=$1", collectionId)
+	row := pool.QueryRow(ctx, "SELECT get_collection FROM pgstac.get_collection($1)", collectionId)
 
 	collection := make(map[string]*json.RawMessage, 20)
 	var rawCollection string
@@ -105,6 +106,7 @@ func Collection(c *fiber.Ctx) error {
 }
 
 // Collections returns a list of collections managed by this STAC server
+// GET /collections/
 func Collections(c *fiber.Ctx) error {
 	ctx := context.Background()
 	baseUrl := getBaseUrl(c)

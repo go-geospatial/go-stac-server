@@ -17,16 +17,18 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/go-geospatial/go-stac-server/database"
 	"github.com/go-geospatial/go-stac-server/stac"
+	json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 )
 
 // Item returns details of a specific item
+// GET /collections/:collectionId/items/:itemId
 func Item(c *fiber.Ctx) error {
 	ctx := context.Background()
 	baseUrl := getBaseUrl(c)
@@ -55,6 +57,7 @@ func Item(c *fiber.Ctx) error {
 		Collections: []string{collectionId},
 		Ids:         []string{itemId},
 		Conf:        &conf,
+		Limit:       1,
 	}
 
 	// do the search
@@ -121,36 +124,11 @@ func Item(c *fiber.Ctx) error {
 }
 
 // Items returns a list of items in a collection
+// GET /collections/:collectionId/items
 func Items(c *fiber.Ctx) error {
 	ctx := context.Background()
 	baseUrl := getBaseUrl(c)
-
-	// get params
 	collectionId := c.Params("id")
-	limitStr := c.Query("limit", "10")
-	bboxStr := c.Query("bbox", "")
-	dateStr := c.Query("datetime", "")
-	token := c.Query("token", "")
-
-	// parse limit
-	limit, err := parseLimit(c, limitStr)
-	if err != nil {
-		// response and logging handled by parseLimit
-		return err
-	}
-
-	// parse bbox
-	bbox, err := parseBbox(c, bboxStr)
-	if err != nil {
-		// response and logging handled by parseBbox
-		return err
-	}
-
-	// parse date string (must be RFC 3339)
-	if err := parseRFC3339Date(c, dateStr); err != nil {
-		// http response and logging handled by parseRFC3339Date
-		return err
-	}
 
 	pool := database.GetInstance(ctx)
 
@@ -166,21 +144,13 @@ func Items(c *fiber.Ctx) error {
 		})
 	}
 
-	// create CQL search criteria
-	conf := json.RawMessage(`{"nohydrate": false}`)
-	cql := stac.CQL{
-		Collections: []string{collectionId},
-		Limit:       limit,
-		DateTime:    dateStr,
-		Token:       token,
-		Conf:        &conf,
-	}
-
-	if bboxStr != "" {
-		cql.Bbox = bbox
-	}
-
 	// do the search
+	cql, err := getCQLFromQuery(c)
+	if err != nil {
+		// http response and logging handled by getCQLFromQuery
+		return err
+	}
+	cql.Collections = []string{collectionId}
 	featureCollection, err := stac.Search(cql)
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
@@ -243,14 +213,30 @@ func Items(c *fiber.Ctx) error {
 	overallLinks = stac.AddLink(overallLinks, baseUrl, "collection", fmt.Sprintf("/collections/%s", collectionId), "application/json")
 	overallLinks = stac.AddLink(overallLinks, baseUrl, "parent", fmt.Sprintf("/collections/%s", collectionId), "application/json")
 	overallLinks = stac.AddLink(overallLinks, baseUrl, "root", "/", "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "self", fmt.Sprintf("/collections/%s/items", collectionId), "application/geo+json")
+
+	queryParts := buildQueryArray(c)
+	token := c.Query("token", "")
+	var queryPartsFull []string
+	if token != "" {
+		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", token))
+	}
+	query := strings.Join(queryPartsFull, "&")
+	if query != "" {
+		overallLinks = stac.AddLink(overallLinks, baseUrl, "self", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
+	} else {
+		overallLinks = stac.AddLink(overallLinks, baseUrl, "self", fmt.Sprintf("/collections/%s/items", collectionId), "application/geo+json")
+	}
 
 	if featureCollection.Next != "" {
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "next", fmt.Sprintf("/collections/%s/items?token=%s", collectionId, featureCollection.Next), "application/geo+json")
+		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Next))
+		query := strings.Join(queryPartsFull, "&")
+		overallLinks = stac.AddLink(overallLinks, baseUrl, "next", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
 	}
 
 	if featureCollection.Prev != "" {
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "previous", fmt.Sprintf("/collections/%s/items?token=%s", collectionId, featureCollection.Next), "application/geo+json")
+		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Prev))
+		query := strings.Join(queryPartsFull, "&")
+		overallLinks = stac.AddLink(overallLinks, baseUrl, "previous", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
 	}
 
 	return c.JSON(struct {

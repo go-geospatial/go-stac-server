@@ -15,14 +15,19 @@
 
 package stac
 
-import "fmt"
+import (
+	"fmt"
+
+	json "github.com/goccy/go-json"
+)
 
 type Link struct {
-	Rel    string `json:"rel"`
-	Type   string `json:"type"`
-	Title  string `json:"title,omitempty"`
-	Href   string `json:"href"`
-	Method string `json:"method,omitempty"`
+	Rel    string           `json:"rel"`
+	Type   string           `json:"type"`
+	Title  string           `json:"title,omitempty"`
+	Href   string           `json:"href"`
+	Method string           `json:"method,omitempty"`
+	Body   *json.RawMessage `json:"body,omitempty"`
 }
 
 // AddLink creates a new link reference in the Links array of a Feature
@@ -30,12 +35,28 @@ type Link struct {
 // baseUrl baseUrl of this STAC server
 // endpoint is the last portion of the URL i.e. <base url>/api/stac/v1/<endpoint>
 func AddLink(links []Link, baseUrl string, rel string, endpoint string, mimeType string) []Link {
-	self := fmt.Sprintf("%s/api/stac/v1", baseUrl)
-
+	href := fmt.Sprintf("%s/api/stac/v1%s", baseUrl, endpoint)
 	links = append(links, Link{
 		Rel:  rel,
 		Type: mimeType,
-		Href: fmt.Sprintf("%s%s", self, endpoint),
+		Href: href,
+	})
+
+	return links
+}
+
+// AddLinkPost creates a new link reference in the Links array of a Feature
+// rel is the name of the link relationship
+// baseUrl baseUrl of this STAC server
+// endpoint is the last portion of the URL i.e. <base url>/api/stac/v1/<endpoint>
+func AddLinkPost(links []Link, baseUrl string, rel string, endpoint string, mimeType string, body *json.RawMessage) []Link {
+	href := fmt.Sprintf("%s/api/stac/v1%s", baseUrl, endpoint)
+	links = append(links, Link{
+		Rel:    rel,
+		Type:   mimeType,
+		Href:   href,
+		Method: "POST",
+		Body:   body,
 	})
 
 	return links

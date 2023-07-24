@@ -39,4 +39,7 @@ func SetupRoutes(app *fiber.App) {
 	stacV1.Get("/collections/:id", handler.Collection)
 	stacV1.Get("/collections/:id/items", handler.Items)
 	stacV1.Get("/collections/:collectionId/items/:itemId", handler.Item)
+
+	stacV1.Get("/search", handler.Search)
+	stacV1.Post("/search", handler.Search)
 }

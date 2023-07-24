@@ -17,9 +17,10 @@ package stac
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 
 	"github.com/go-geospatial/go-stac-server/database"
+	json "github.com/goccy/go-json"
 	"github.com/rs/zerolog/log"
 )
 
@@ -44,6 +45,7 @@ type CQL struct {
 	Query       *json.RawMessage `json:"query,omitempty"`
 	Fields      *CQLFields       `json:"fields,omitempty"`
 	SortBy      []CQLSort        `json:"sortby,omitempty"`
+	Filter      *json.RawMessage `json:"filter,omitempty"`
 	FilterLang  string           `json:"filter-lang"`
 	Token       string           `json:"token,omitempty"`
 }
@@ -60,12 +62,13 @@ type SearchResponse struct {
 func Search(params CQL) (*SearchResponse, error) {
 	ctx := context.Background()
 
-	params.FilterLang = "cql-json"
 	paramsJson, err := json.Marshal(params)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal search parameters")
 		return nil, err
 	}
+
+	fmt.Printf("== %+v == \n", params)
 
 	pool := database.GetInstance(ctx)
 	row := pool.QueryRow(ctx, "SELECT search FROM search($1::text::jsonb)", paramsJson)
