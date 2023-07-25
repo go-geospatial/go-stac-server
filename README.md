@@ -28,6 +28,22 @@ go-stac-server
 
 In a web browser, navigate to `https://localhost:3000/` to browse the catalog.
 
+# Testing
+
+Testing is done with the [stac-api-validator](https://github.com/stac-utils/stac-api-validator). To validate the
+STAC server:
+
+```bash
+pip install stac-api-validator
+stac-api-validator \
+    --root-url https://localhost:3000/api/stac/v1/ \
+    --conformance core \
+    --conformance item-search \
+    --conformance features \
+    --collection noaa-emergency-response \
+    --geometry '{"type": "Polygon", "coordinates": [[[-86.9251, 36.2001], [-86.9251, 36.1749], [-86.8999, 36.1749], [-86.8999, 36.2001], [-86.9251, 36.2001]]]}'
+```
+
 # Configuration
 
 | Command Flag          | Environment Variable     | Configuration File       | Description                                                                                         |
