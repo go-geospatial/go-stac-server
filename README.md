@@ -1,5 +1,13 @@
 # go-stac-server
-A dynamic stac 1.0.0 server implemented in golang
+
+Spatio-Temporal Asset Catalog (STAC) STAC is a standard for publishing meta-data about geo-spatial data. It defines
+a common REST API for accessing, searching and modifying geospatial data. For further details about the STAC spec see
+[STAC Specification](https://stacspec.org/en/about/stac-spec/)
+
+go-stac-server is a golang implementation of the STAC API specification using a PostgreSQL database to store data.
+
+There is a rich ecosystem of tools available for STAC. For a list of tools currently available consult the
+[STAC Tools & Resources](https://stacspec.org/en/about/tools-resources/) webpage.
 
 # Requirements
 
@@ -22,16 +30,21 @@ In a web browser, navigate to `https://localhost:3000/` to browse the catalog.
 
 # Configuration
 
-| Command Flag | Environment Variable | Configuration File | Description                                                                                         |
-|--------------|----------------------|--------------------|-----------------------------------------------------------------------------------------------------|
-| --dsn        | DSN                  | database.dsn       | Database connection string `postgresql://[[username:[password]@][host[:port]][/dbname][?paramspec]` |
-| --port       | PORT                 | server.port        | Port to run server on                                                                               |
+| Command Flag          | Environment Variable     | Configuration File       | Description                                                                                         |
+|-----------------------|--------------------------|--------------------------|-----------------------------------------------------------------------------------------------------|
+| --dsn                 | DSN                      | database.dsn             | Database connection string `postgresql://[[username:[password]@][host[:port]][/dbname][?paramspec]` |
+| --port                | PORT                     | server.port              | Port to run server on                                                                               |
+| --base-url            | BASE_URL                 | server.baseUrl           | Base URL to use when expanding links                                                                |
+| --catalog-id          | STAC_CATALOG_ID          | stac.catalog.id          | ID used for STAC catalog                                                                            |
+| --catalog-title       | STAC_CATALOG_TITLE       | stac.catalog.title       | Title of this STAC catalog                                                                          |
+| --catalog-description | STAC_CATALOG_DESCRIPTION | stac.catalog.description | Description of this STAC catalog                                                                    |
 
 ## Sample configuration file:
 
 ```toml
 [server]
 port=3000
+baseUrl="http://localhost:3000"
 
 [database]
 dsn="postgresql://stac@localhost:5432/stac"
