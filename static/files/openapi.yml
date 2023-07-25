@@ -391,26 +391,413 @@ paths:
         - Core
   /healthz:
     get:
-      description: Check health of service
-      operationId: healthz__get
+      description: |-
+        The healthz endpoint checks the health of the database connection and returns
+        a JSON indicator about the health of the service. This is useful for kubernetes
+        Liveness checks. If the `database` field is `FAILED` that means the service
+        cannot ping the database server.
+      operationId: getHealthz
       responses:
         "200":
           content:
             application/json:
-              schema: {}
+              schema:
+                properties:
+                  database:
+                    type: string
+                    enum:
+                    - OK
+                    - FAILED
+                  status:
+                    type: string
+                    enum:
+                    - OK
+                    - FAILED
           description: Successful Response
       summary: Check health of service
       tags:
         - Service Health
   /metrics:
     get:
-      description: Publish prometheus metrics about the performance of the server
-      operationId: metrics__get
+      description: |-
+        Publish prometheus metrics about the performance of the server.
+        The following metrics are available for the HTTP server:
+
+        * **http_request_duration_seconds** Duration of all HTTP requests by status code, method and path.
+        * **http_requests_in_progress_total** All the requests in progress
+        * **http_requests_total** Count all http requests by status code, method and path.
+
+        Metrics about the overall process are also available:
+
+        * **go_gc_duration_seconds** A summary of the pause duration of garbage collection cycles.
+        * **go_goroutines** Number of goroutines that currently exist.
+        * **go_info** Information about the Go environment.
+        * **go_memstats_alloc_bytes** Number of bytes allocated and still in use.
+        * **go_memstats_alloc_bytes_total** Total number of bytes allocated, even if freed.
+        * **go_memstats_buck_hash_sys_bytes** Number of bytes used by the profiling bucket hash table.
+        * **go_memstats_frees_total** Total number of frees.
+        * **go_memstats_gc_sys_bytes** Number of bytes used for garbage collection system metadata.
+        * **go_memstats_heap_alloc_bytes** Number of heap bytes allocated and still in use.
+        * **go_memstats_heap_idle_bytes** Number of heap bytes waiting to be used.
+        * **go_memstats_heap_inuse_bytes** Number of heap bytes that are in use.
+        * **go_memstats_heap_objects** Number of allocated objects.
+        * **go_memstats_heap_released_bytes** Number of heap bytes released to OS.
+        * **go_memstats_heap_sys_bytes** Number of heap bytes obtained from system.
+        * **go_memstats_last_gc_time_seconds** Number of seconds since 1970 of last garbage collection.
+        * **go_memstats_lookups_total** Total number of pointer lookups.
+        * **go_memstats_mallocs_total** Total number of mallocs.
+        * **go_memstats_mcache_inuse_bytes** Number of bytes in use by mcache structures.
+        * **go_memstats_mcache_sys_bytes** Number of bytes used for mcache structures obtained from system.
+        * **go_memstats_mspan_inuse_bytes** Number of bytes in use by mspan structures.
+        * **go_memstats_mspan_sys_bytes** Number of bytes used for mspan structures obtained from system.
+        * **go_memstats_next_gc_bytes** Number of heap bytes when next garbage collection will take place.
+        * **go_memstats_other_sys_bytes** Number of bytes used for other system allocations.
+        * **go_memstats_stack_inuse_bytes** Number of bytes in use by the stack allocator.
+        * **go_memstats_stack_sys_bytes** Number of bytes obtained from system for stack allocator.
+        * **go_memstats_sys_bytes** Number of bytes obtained from system.
+        * **go_threads** Number of OS threads created.
+        * **promhttp_metric_handler_requests_in_flight** Current number of scrapes being served.
+        * **promhttp_metric_handler_requests_total** Total number of scrapes by HTTP status code.
+
+
+      operationId: getMetrics
       responses:
         "200":
           content:
             text/plain:
-              schema: {}
+              schema:
+                examples:
+                - |-
+                  # HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+                  # TYPE go_gc_duration_seconds summary
+                  go_gc_duration_seconds{quantile="0"} 2.7575e-05
+                  go_gc_duration_seconds{quantile="0.25"} 4.6556e-05
+                  go_gc_duration_seconds{quantile="0.5"} 9.3768e-05
+                  go_gc_duration_seconds{quantile="0.75"} 0.000274694
+                  go_gc_duration_seconds{quantile="1"} 0.000274694
+                  go_gc_duration_seconds_sum 0.000442593
+                  go_gc_duration_seconds_count 4
+                  # HELP go_goroutines Number of goroutines that currently exist.
+                  # TYPE go_goroutines gauge
+                  go_goroutines 34
+                  # HELP go_info Information about the Go environment.
+                  # TYPE go_info gauge
+                  go_info{version="go1.20.5"} 1
+                  # HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
+                  # TYPE go_memstats_alloc_bytes gauge
+                  go_memstats_alloc_bytes 1.122512e+07
+                  # HELP go_memstats_alloc_bytes_total Total number of bytes allocated, even if freed.
+                  # TYPE go_memstats_alloc_bytes_total counter
+                  go_memstats_alloc_bytes_total 1.5977448e+07
+                  # HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table.
+                  # TYPE go_memstats_buck_hash_sys_bytes gauge
+                  go_memstats_buck_hash_sys_bytes 5186
+                  # HELP go_memstats_frees_total Total number of frees.
+                  # TYPE go_memstats_frees_total counter
+                  go_memstats_frees_total 7365
+                  # HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata.
+                  # TYPE go_memstats_gc_sys_bytes gauge
+                  go_memstats_gc_sys_bytes 8.024064e+06
+                  # HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and still in use.
+                  # TYPE go_memstats_heap_alloc_bytes gauge
+                  go_memstats_heap_alloc_bytes 1.122512e+07
+                  # HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used.
+                  # TYPE go_memstats_heap_idle_bytes gauge
+                  go_memstats_heap_idle_bytes 6.750208e+06
+                  # HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use.
+                  # TYPE go_memstats_heap_inuse_bytes gauge
+                  go_memstats_heap_inuse_bytes 1.327104e+07
+                  # HELP go_memstats_heap_objects Number of allocated objects.
+                  # TYPE go_memstats_heap_objects gauge
+                  go_memstats_heap_objects 4665
+                  # HELP go_memstats_heap_released_bytes Number of heap bytes released to OS.
+                  # TYPE go_memstats_heap_released_bytes gauge
+                  go_memstats_heap_released_bytes 4.685824e+06
+                  # HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system.
+                  # TYPE go_memstats_heap_sys_bytes gauge
+                  go_memstats_heap_sys_bytes 2.0021248e+07
+                  # HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
+                  # TYPE go_memstats_last_gc_time_seconds gauge
+                  go_memstats_last_gc_time_seconds 1.690239187788801e+09
+                  # HELP go_memstats_lookups_total Total number of pointer lookups.
+                  # TYPE go_memstats_lookups_total counter
+                  go_memstats_lookups_total 0
+                  # HELP go_memstats_mallocs_total Total number of mallocs.
+                  # TYPE go_memstats_mallocs_total counter
+                  go_memstats_mallocs_total 12030
+                  # HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures.
+                  # TYPE go_memstats_mcache_inuse_bytes gauge
+                  go_memstats_mcache_inuse_bytes 19200
+                  # HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system.
+                  # TYPE go_memstats_mcache_sys_bytes gauge
+                  go_memstats_mcache_sys_bytes 31200
+                  # HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures.
+                  # TYPE go_memstats_mspan_inuse_bytes gauge
+                  go_memstats_mspan_inuse_bytes 147040
+                  # HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system.
+                  # TYPE go_memstats_mspan_sys_bytes gauge
+                  go_memstats_mspan_sys_bytes 163200
+                  # HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place.
+                  # TYPE go_memstats_next_gc_bytes gauge
+                  go_memstats_next_gc_bytes 2.2753184e+07
+                  # HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations.
+                  # TYPE go_memstats_other_sys_bytes gauge
+                  go_memstats_other_sys_bytes 2.523246e+06
+                  # HELP go_memstats_stack_inuse_bytes Number of bytes in use by the stack allocator.
+                  # TYPE go_memstats_stack_inuse_bytes gauge
+                  go_memstats_stack_inuse_bytes 950272
+                  # HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator.
+                  # TYPE go_memstats_stack_sys_bytes gauge
+                  go_memstats_stack_sys_bytes 950272
+                  # HELP go_memstats_sys_bytes Number of bytes obtained from system.
+                  # TYPE go_memstats_sys_bytes gauge
+                  go_memstats_sys_bytes 3.1718416e+07
+                  # HELP go_threads Number of OS threads created.
+                  # TYPE go_threads gauge
+                  go_threads 17
+                  # HELP http_request_duration_seconds Duration of all HTTP requests by status code, method and path.
+                  # TYPE http_request_duration_seconds histogram
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="1e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="2e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="5e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="1e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="2e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="5e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="1e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="2e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="5e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="1e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="2e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="5e-06"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="1e-05"} 7
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="2e-05"} 10
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="5e-05"} 13
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.0001"} 13
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.0002"} 14
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.0005"} 14
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.001"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.002"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.005"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.01"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.02"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.05"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.1"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.2"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="0.5"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="1"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="2"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="5"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="10"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="15"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="20"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="30"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/",service="go-stac-server",status_code="200",le="+Inf"} 15
+                  http_request_duration_seconds_sum{method="GET",path="/",service="go-stac-server",status_code="200"} 0.0008861489999999999
+                  http_request_duration_seconds_count{method="GET",path="/",service="go-stac-server",status_code="200"} 15
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="1e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="2e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="5e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="1e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="2e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="5e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="1e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="2e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="5e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="1e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="2e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="5e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="1e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="2e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="5e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.0001"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.0002"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.0005"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.001"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.002"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.005"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.01"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.02"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.05"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="0.5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="10"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="15"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="20"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="30"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200",le="+Inf"} 1
+                  http_request_duration_seconds_sum{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200"} 0.018476955
+                  http_request_duration_seconds_count{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="1e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="2e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="5e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="1e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="2e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="5e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="1e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="2e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="5e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="1e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="2e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="5e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="1e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="2e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="5e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.0001"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.0002"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.0005"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.001"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.002"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.005"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.01"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.02"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.05"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="0.5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="10"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="15"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="20"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="30"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200",le="+Inf"} 1
+                  http_request_duration_seconds_sum{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200"} 0.000619973
+                  http_request_duration_seconds_count{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="1e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="2e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="5e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="1e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="2e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="5e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="1e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="2e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="5e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="1e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="2e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="5e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="1e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="2e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="5e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.0001"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.0002"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.0005"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.001"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.002"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.005"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.01"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.02"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="0.5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="10"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="15"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="20"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="30"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200",le="+Inf"} 1
+                  http_request_duration_seconds_sum{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200"} 0.069541224
+                  http_request_duration_seconds_count{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="1e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="2e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="5e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="1e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="2e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="5e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="1e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="2e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="5e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="1e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="2e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="5e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="1e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="2e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="5e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.0001"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.0002"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.0005"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.001"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.002"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.005"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.01"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.02"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.05"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="0.5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="10"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="15"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="20"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="30"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200",le="+Inf"} 1
+                  http_request_duration_seconds_sum{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200"} 0.000251615
+                  http_request_duration_seconds_count{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="1e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="2e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="5e-09"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="1e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="2e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="5e-08"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="1e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="2e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="5e-07"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="1e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="2e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="5e-06"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="1e-05"} 0
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="2e-05"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="5e-05"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.0001"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.0002"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.0005"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.001"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.002"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.005"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.01"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.02"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.05"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="0.5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="1"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="2"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="5"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="10"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="15"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="20"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="30"} 1
+                  http_request_duration_seconds_bucket{method="GET",path="/config.js",service="go-stac-server",status_code="200",le="+Inf"} 1
+                  http_request_duration_seconds_sum{method="GET",path="/config.js",service="go-stac-server",status_code="200"} 1.6243e-05
+                  http_request_duration_seconds_count{method="GET",path="/config.js",service="go-stac-server",status_code="200"} 1
+                  # HELP http_requests_in_progress_total All the requests in progress
+                  # TYPE http_requests_in_progress_total gauge
+                  http_requests_in_progress_total{method="GET",service="go-stac-server"} 0
+                  # HELP http_requests_total Count all http requests by status code, method and path.
+                  # TYPE http_requests_total counter
+                  http_requests_total{method="GET",path="/",service="go-stac-server",status_code="200"} 15
+                  http_requests_total{method="GET",path="/api/stac/v1/",service="go-stac-server",status_code="200"} 1
+                  http_requests_total{method="GET",path="/api/stac/v1/collections",service="go-stac-server",status_code="200"} 1
+                  http_requests_total{method="GET",path="/api/stac/v1/collections/:collectionId/items",service="go-stac-server",status_code="200"} 1
+                  http_requests_total{method="GET",path="/api/stac/v1/healthz",service="go-stac-server",status_code="200"} 1
+                  http_requests_total{method="GET",path="/config.js",service="go-stac-server",status_code="200"} 1
+                  # HELP promhttp_metric_handler_requests_in_flight Current number of scrapes being served.
+                  # TYPE promhttp_metric_handler_requests_in_flight gauge
+                  promhttp_metric_handler_requests_in_flight 1
+                  # HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.
+                  # TYPE promhttp_metric_handler_requests_total counter
+                  promhttp_metric_handler_requests_total{code="200"} 0
+                  promhttp_metric_handler_requests_total{code="500"} 0
+                  promhttp_metric_handler_requests_total{code="503"} 0
           description: Successful Response
       summary: Prometheus metrics
       tags:

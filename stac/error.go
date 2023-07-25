@@ -15,7 +15,7 @@
 
 package stac
 
-type Error struct {
+type Message struct {
 	Code        string `json:"code"`
 	Description string `json:"description"`
 }

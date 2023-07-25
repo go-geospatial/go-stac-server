@@ -17,17 +17,171 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/go-geospatial/go-stac-server/database"
+	"github.com/go-geospatial/go-stac-server/jsonutil"
 	"github.com/go-geospatial/go-stac-server/stac"
 	json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog/log"
 )
 
-// ModifyCollection creates a new collection in the database
+// DeleteItem deletes an item from the database
+// DELETE /collections/:collectionId/items/:itemId
+func DeleteItem(c *fiber.Ctx) error {
+	ctx := context.Background()
+	collectionId := c.Params("collectionId")
+	itemId := c.Params("itemId")
+
+	pool := database.GetInstance(ctx)
+	if _, err := pool.Exec(ctx, "SELECT delete_item($1::text, $2::text);", itemId, collectionId); err != nil {
+		log.Error().Err(err).Msg("received error while trying to delete item")
+		c.Status(fiber.ErrNotFound.Code)
+		c.JSON(stac.Message{
+			Code:        "DeleteItemFailed",
+			Description: "cannot find item; failed to delete.",
+		})
+		return err
+	}
+
+	return c.JSON(stac.Message{
+		Code:        "ItemDeleted",
+		Description: "the item has been deleted",
+	})
+}
+
+// UpdateItem updates an existing item with the provided JSON
+// PUT /collections/:collectionId/items/:itemId
+func UpdateItem(c *fiber.Ctx) error {
+	ctx := context.Background()
+	collectionId := c.Params("collectionId")
+	itemId := c.Params("itemId")
+
+	// set collectionId and and itemId from URL
+	item := make(map[string]*json.RawMessage)
+	if err := json.Unmarshal(c.Body(), &item); err != nil {
+		log.Error().Err(err).Msg("failed to un-marshal body")
+		c.Status(fiber.StatusUnprocessableEntity)
+		c.JSON(stac.Message{
+			Code:        "PutItemFailed",
+			Description: "failed to parse http body as JSON",
+		})
+		return err
+	}
+
+	// Check that the id's supplied match those from the URL. If no id's supplied populate with values from URL
+	item, err := checkBodyIdAgainstURL(c, collectionId, itemId, item)
+	if err != nil {
+		return err
+	}
+
+	// everything checks out ... do the update ... if the attempted update fails it's because the
+	// item doesn't currently exist in database so send 404
+
+	putItem, err := json.Marshal(item)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to serialize item")
+		c.Status(fiber.StatusInternalServerError)
+		c.JSON(stac.Message{
+			Code:        "ItemSerializeFailed",
+			Description: "could not serialize item",
+		})
+		return err
+	}
+
+	pool := database.GetInstance(ctx)
+	if _, err := pool.Exec(ctx, "SELECT update_item($1::text::jsonb);", putItem); err != nil {
+		log.Error().Err(err).Msg("received error while trying to update item")
+		c.Status(fiber.StatusNotFound)
+		c.JSON(stac.Message{
+			Code:        "PutItemFailed",
+			Description: fmt.Sprintf("collection %s does not contain an item with id %s", collectionId, itemId),
+		})
+		return err
+	}
+
+	return itemFromID(c, collectionId, itemId)
+}
+
+// PatchItem updates an item with only the specific fields provided by request body
+// PATCH /collections/:collectionId/items/:itemId
+func PatchItem(c *fiber.Ctx) error {
+	ctx := context.Background()
+	collectionId := c.Params("collectionId")
+	itemId := c.Params("itemId")
+
+	// set collectionId and and itemId from URL
+	item := make(map[string]*json.RawMessage)
+	if err := json.Unmarshal(c.Body(), &item); err != nil {
+		log.Error().Err(err).Msg("failed to un-marshal body")
+		c.Status(fiber.StatusUnprocessableEntity)
+		c.JSON(stac.Message{
+			Code:        "PatchItemFailed",
+			Description: "failed to parse http body as JSON",
+		})
+		return err
+	}
+
+	// Check that the id's supplied match those from the URL. If no id's supplied populate with values from URL
+	item, err := checkBodyIdAgainstURL(c, collectionId, itemId, item)
+	if err != nil {
+		return err
+	}
+
+	// get the item from the database
+	pool := database.GetInstance(ctx)
+	var dbItemRaw string
+	if err := pool.QueryRow(ctx, "SELECT get_item FROM get_item($1::text, $2::text);", itemId, collectionId).Scan(&dbItemRaw); err != nil {
+		log.Error().Err(err).Msg("failed load item from database")
+		c.Status(fiber.StatusNotFound)
+		c.JSON(stac.Message{
+			Code:        "ItemNotFound",
+			Description: "item was not found",
+		})
+		return err
+	}
+
+	patchItem, err := json.Marshal(item)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to serialize item")
+		c.Status(fiber.StatusInternalServerError)
+		c.JSON(stac.Message{
+			Code:        "ItemSerializeFailed",
+			Description: "could not serialize item",
+		})
+		return err
+	}
+
+	// merge items
+	mergedItem, err := jsonutil.Merge(patchItem, []byte(dbItemRaw))
+	if err != nil {
+		log.Error().Err(err).Msg("failed to merge items")
+		c.Status(fiber.StatusInternalServerError)
+		c.JSON(stac.Message{
+			Code:        "MergeItem",
+			Description: "failed to merge items",
+		})
+		return err
+	}
+
+	// upate database
+	if _, err := pool.Exec(ctx, "SELECT update_item($1::text::jsonb);", mergedItem); err != nil {
+		log.Error().Err(err).Msg("received error while trying to update item")
+		c.Status(fiber.StatusNotFound)
+		c.JSON(stac.Message{
+			Code:        "PutItemFailed",
+			Description: fmt.Sprintf("collection %s does not contain an item with id %s", collectionId, itemId),
+		})
+		return err
+	}
+
+	return itemFromID(c, collectionId, itemId)
+}
+
+// CreateItems creates a new collection in the database
 // POST /collections/:collectionId/items
 func CreateItems(c *fiber.Ctx) error {
 	// validate passed JSON
@@ -37,7 +191,7 @@ func CreateItems(c *fiber.Ctx) error {
 	if err := json.Unmarshal(itemsRaw, &items); err != nil {
 		log.Error().Err(err).Str("RequestBody", string(itemsRaw)).Msg("cannot unmarshal body to items")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "JSON parse failed; items must be a valid JSON object",
 		})
@@ -49,7 +203,7 @@ func CreateItems(c *fiber.Ctx) error {
 	if geojsonType, ok = items["type"]; !ok {
 		log.Error().Str("RequestBody", string(itemsRaw)).Msg("items missing type field - must be a valid geojson object")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "items missing type field - must be a valid geojson object",
 		})
@@ -64,7 +218,7 @@ func CreateItems(c *fiber.Ctx) error {
 	default:
 		log.Error().Str("type", geojsonTypeStr).Msg("invalid geojson type")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "invalid geojson type - must be one of 'Feature' or 'FeatureCollection'",
 		})
@@ -91,7 +245,7 @@ func createFeature(c *fiber.Ctx, items map[string]*json.RawMessage, itemsRaw []b
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal items to JSON")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "failed to marshal JSON for items",
 		})
@@ -101,7 +255,7 @@ func createFeature(c *fiber.Ctx, items map[string]*json.RawMessage, itemsRaw []b
 	if _, err := pool.Exec(ctx, "SELECT create_item($1::text::jsonb)", itemsJson); err != nil {
 		log.Error().Err(err).Str("id", itemId).Str("raw", string(itemsRaw)).Msg("failed to create item")
 		c.Status(fiber.ErrConflict.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        "CreateItemFailed",
 			Description: "failed to create item",
 		})
@@ -120,7 +274,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	if featuresRaw, ok = items["features"]; !ok {
 		log.Error().Str("raw", string(itemsRaw)).Msg("failed to get features - object invalid")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "objects of type 'FeatureCollection' must have a 'features' field",
 		})
@@ -130,7 +284,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	if err := json.Unmarshal(*featuresRaw, &features); err != nil {
 		log.Error().Err(err).Str("raw", string(itemsRaw)).Msg("unmarshal geojson features failed")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "objects of type 'FeatureCollection' must have a valid 'features' field",
 		})
@@ -155,7 +309,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal items to JSON")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "failed to marshal JSON for items",
 		})
@@ -165,7 +319,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	if _, err := pool.Exec(ctx, "SELECT create_items($1::text::jsonb)", itemsJson); err != nil {
 		log.Error().Err(err).Strs("id", itemIds).Str("raw", string(itemsRaw)).Msg("failed to create item")
 		c.Status(fiber.ErrConflict.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        "CreateItemFailed",
 			Description: "failed to create item",
 		})
@@ -195,7 +349,7 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 	if err := row.Scan(&dbResult); err != nil {
 		log.Error().Err(err).Str("collectionId", collectionId).Msg("collection does not exist in database")
 		c.Status(fiber.ErrNotFound.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
 			Description: "could not query collections table",
 		})
@@ -215,7 +369,7 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ServerError,
 			Description: "stac search returned an error",
 		})
@@ -231,7 +385,7 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 		if err := json.Unmarshal(*item["id"], &itemId); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item id",
 			})
@@ -240,7 +394,7 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 		if err := json.Unmarshal(*item["links"], &links); err != nil {
 			log.Error().Err(err).Msg("error de-serializing link")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item link",
 			})
@@ -260,7 +414,7 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing item links",
 			})
@@ -288,7 +442,7 @@ func Items(c *fiber.Ctx) error {
 	if err := row.Scan(&dbResult); err != nil {
 		log.Error().Err(err).Str("collectionId", collectionId).Msg("collection does not exist in database")
 		c.Status(fiber.ErrNotFound.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
 			Description: "could not query collections table",
 		})
@@ -305,7 +459,7 @@ func Items(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ServerError,
 			Description: "stac search returned an error",
 		})
@@ -320,7 +474,7 @@ func Items(c *fiber.Ctx) error {
 		if err := json.Unmarshal(*item["id"], &itemId); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item id",
 			})
@@ -329,7 +483,7 @@ func Items(c *fiber.Ctx) error {
 		if err := json.Unmarshal(*item["links"], &links); err != nil {
 			log.Error().Err(err).Msg("error de-serializing link")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item link",
 			})
@@ -349,7 +503,7 @@ func Items(c *fiber.Ctx) error {
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing item links",
 			})
@@ -415,7 +569,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 	if err := row.Scan(&dbResult); err != nil {
 		log.Error().Err(err).Str("collectionId", collectionId).Msg("collection does not exist in database")
 		c.Status(fiber.ErrNotFound.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
 			Description: "could not query collections table",
 		})
@@ -434,7 +588,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ServerError,
 			Description: "stac search returned an error",
 		})
@@ -449,7 +603,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 		if err := json.Unmarshal(*item["id"], &itemId); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item id",
 			})
@@ -458,7 +612,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 		if err := json.Unmarshal(*item["links"], &links); err != nil {
 			log.Error().Err(err).Msg("error de-serializing link")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item link",
 			})
@@ -478,7 +632,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing item links",
 			})
@@ -520,4 +674,59 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 		Features: featureCollection.Features,
 		Links:    overallLinks,
 	})
+}
+
+func checkBodyIdAgainstURL(c *fiber.Ctx, collectionId string, itemId string, item map[string]*json.RawMessage) (map[string]*json.RawMessage, error) {
+	// check that itemId and collectionId are set and match those provided in the URL
+	if bodyItemId, ok := item["id"]; !ok {
+		var itemIdSerialized json.RawMessage
+		itemIdSerialized, err := json.Marshal(itemId)
+		if err != nil {
+			log.Error().Msg("body does not include item id")
+			c.Status(fiber.StatusBadRequest)
+			c.JSON(stac.Message{
+				Code:        "ModifyItemFailed",
+				Description: "item must include an `id` field with the item id",
+			})
+			return nil, err
+		}
+		item["id"] = &itemIdSerialized
+	} else {
+		if string(*bodyItemId) != itemId {
+			log.Error().Str("BodyItemId", string(*bodyItemId)).Str("URLItemId", itemId).Msg("PUT body item id does not match URL item id")
+			c.Status(fiber.StatusBadRequest)
+			c.JSON(stac.Message{
+				Code:        "ModifyItemFailed",
+				Description: "item must include an `id` field with the item id that matches the URL item id",
+			})
+			return nil, errors.New("specified item id and url item id do not match")
+		}
+	}
+
+	if bodyCollectionId, ok := item["collection"]; !ok {
+		var collectionSerialized json.RawMessage
+		collectionSerialized, err := json.Marshal(collectionId)
+		if err != nil {
+			log.Error().Err(err).Msg("could not serialize collection id")
+			c.Status(fiber.StatusInternalServerError)
+			c.JSON(stac.Message{
+				Code:        "ModifyItemFailed",
+				Description: fmt.Sprintf("serialize collection id failed: %s", err.Error()),
+			})
+			return nil, err
+		}
+		item["collection"] = &collectionSerialized
+	} else {
+		if string(*bodyCollectionId) != collectionId {
+			log.Error().Str("BodyCollectionId", string(*bodyCollectionId)).Str("URLCollectionId", itemId).Msg("PUT body collection id does not match URL collection id")
+			c.Status(fiber.StatusBadRequest)
+			c.JSON(stac.Message{
+				Code:        "ModifyItemFailed",
+				Description: "item must include a `collection` field with the coillection id that matches the URL collection id",
+			})
+			return nil, errors.New("specified collection id and url collection id do not match")
+		}
+	}
+
+	return item, nil
 }

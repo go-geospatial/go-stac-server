@@ -86,7 +86,7 @@ func Catalog(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msg("error querying collections for catalog response")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        database.QueryErrorCode,
 			Description: "could not query collections table",
 		})
@@ -102,7 +102,7 @@ func Catalog(c *fiber.Ctx) error {
 		if err != nil {
 			log.Error().Err(err).Msg("could not scan collection id and title")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        database.QueryErrorCode,
 				Description: "could not serialize data from collections table",
 			})

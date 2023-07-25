@@ -40,7 +40,7 @@ func ModifyCollection(c *fiber.Ctx) error {
 	if err := json.Unmarshal(collectionRaw, &collection); err != nil {
 		log.Error().Err(err).Str("RequestBody", string(collectionRaw)).Msg("cannot unmarshal provided JSON in CreateCollection")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "JSON parse failed; collection must be a valid JSON object",
 		})
@@ -56,7 +56,7 @@ func ModifyCollection(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal collection to JSON")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "failed to marshal JSON for collection",
 		})
@@ -72,7 +72,7 @@ func ModifyCollection(c *fiber.Ctx) error {
 	if _, err := pool.Exec(ctx, query, collectionJson); err != nil {
 		log.Error().Err(err).Str("id", id).Str("raw", string(collectionRaw)).Msg("failed to create collection")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        "CreateCollectionFailed",
 			Description: "failed to create collection",
 		})
@@ -91,14 +91,14 @@ func DeleteCollection(c *fiber.Ctx) error {
 	if _, err := pool.Exec(ctx, "SELECT delete_collection($1::text)", collectionId); err != nil {
 		log.Error().Err(err).Str("id", collectionId).Msg("collection not found")
 		c.Status(fiber.ErrNotFound.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
 			Description: "collection not found",
 		})
 	}
 
 	// NOTE: we use the error struct here for convenience because it has a suitable structure for the response
-	return c.JSON(stac.Error{
+	return c.JSON(stac.Message{
 		Code:        "CollectionDeleted",
 		Description: "the collection was successfully deleted",
 	})
@@ -127,14 +127,14 @@ func collectionFromID(c *fiber.Ctx, collectionId string) error {
 		case pgx.ErrNoRows:
 			log.Error().Err(err).Str("collectionId", collectionId).Msg("collection not found")
 			c.Status(fiber.ErrNotFound.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        "404",
 				Description: "collection not found",
 			})
 		default:
 			log.Error().Err(err).Msg("could not scan collection id and title")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        database.QueryErrorCode,
 				Description: "could not serialize data from collections table",
 			})
@@ -145,7 +145,7 @@ func collectionFromID(c *fiber.Ctx, collectionId string) error {
 	if err := json.Unmarshal([]byte(rawCollection), &collection); err != nil {
 		log.Error().Err(err).Msg("collection JSON unmarshal failed")
 		c.Status(fiber.ErrInternalServerError.Code)
-		c.JSON(stac.Error{
+		c.JSON(stac.Message{
 			Code:        stac.JSONParsingError,
 			Description: "unable to un-marshal collection object JSON",
 		})
@@ -157,7 +157,7 @@ func collectionFromID(c *fiber.Ctx, collectionId string) error {
 		if err := json.Unmarshal(*rawLinks, &links); err != nil {
 			log.Error().Err(err).Msg("collection JSON unmarshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Error{
+			c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to un-marshal collection links JSON",
 			})
@@ -176,7 +176,7 @@ func collectionFromID(c *fiber.Ctx, collectionId string) error {
 	if err != nil {
 		log.Error().Err(err).Msg("collection links JSON marshal failed")
 		c.Status(fiber.ErrInternalServerError.Code)
-		c.JSON(stac.Error{
+		c.JSON(stac.Message{
 			Code:        stac.JSONParsingError,
 			Description: "unable to marshal collection links to JSON",
 		})
@@ -200,7 +200,7 @@ func Collections(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msg("error querying collections for list collections response")
 		c.Status(fiber.ErrInternalServerError.Code)
-		return c.JSON(stac.Error{
+		return c.JSON(stac.Message{
 			Code:        database.QueryErrorCode,
 			Description: "could not query collections table",
 		})
@@ -214,7 +214,7 @@ func Collections(c *fiber.Ctx) error {
 		if err != nil {
 			log.Error().Err(err).Msg("could not scan collection id and title")
 			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Error{
+			return c.JSON(stac.Message{
 				Code:        database.QueryErrorCode,
 				Description: "could not serialize data from collections table",
 			})
@@ -224,7 +224,7 @@ func Collections(c *fiber.Ctx) error {
 		if err := json.Unmarshal([]byte(rawCollection), &collection); err != nil {
 			log.Error().Err(err).Msg("collection JSON unmarshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Error{
+			c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to un-marshal collection object JSON",
 			})
@@ -236,7 +236,7 @@ func Collections(c *fiber.Ctx) error {
 			if err := json.Unmarshal(*rawLinks, &links); err != nil {
 				log.Error().Err(err).Msg("collection JSON unmarshal failed")
 				c.Status(fiber.ErrInternalServerError.Code)
-				c.JSON(stac.Error{
+				c.JSON(stac.Message{
 					Code:        stac.JSONParsingError,
 					Description: "unable to un-marshal collection links JSON",
 				})
@@ -255,7 +255,7 @@ func Collections(c *fiber.Ctx) error {
 		if err != nil {
 			log.Error().Err(err).Msg("collection links JSON marshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Error{
+			c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to marshal collection links to JSON",
 			})
@@ -267,7 +267,7 @@ func Collections(c *fiber.Ctx) error {
 		if err != nil {
 			log.Error().Err(err).Msg("collection JSON marshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Error{
+			c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to marshal collection to JSON",
 			})

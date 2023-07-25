@@ -24,8 +24,8 @@ func isObject(a []byte) bool {
 	return a[0] == '{'
 }
 
-// MergeJSON takes 2 JSON strings and recursively merges a into b
-func MergeJSON(a, b []byte) (json.RawMessage, error) {
+// Merge takes 2 JSON strings and recursively merges a into b
+func Merge(a, b []byte) (json.RawMessage, error) {
 	aMap := make(map[string]*json.RawMessage)
 	bMap := make(map[string]*json.RawMessage)
 
@@ -42,7 +42,7 @@ func MergeJSON(a, b []byte) (json.RawMessage, error) {
 	for k, aFragment := range aMap {
 		if bFragment, ok := bMap[k]; ok {
 			if isObject(*aFragment) && isObject(*bFragment) {
-				merged, err := MergeJSON(*aFragment, *bFragment)
+				merged, err := Merge(*aFragment, *bFragment)
 				if err != nil {
 					log.Error().Err(err).Msg("cannot merge JSON")
 					return []byte{}, err

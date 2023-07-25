@@ -105,7 +105,7 @@ var rootCmd = &cobra.Command{
 		app.Use(middleware.Timer())
 
 		prometheus := fiberprometheus.New("go-stac-server")
-		prometheus.RegisterAt(app, "/metrics")
+		prometheus.RegisterAt(app, "/api/stac/v1/metrics")
 		app.Use(prometheus.Middleware)
 
 		// Setup routes
