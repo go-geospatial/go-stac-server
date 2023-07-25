@@ -69,7 +69,7 @@ func Catalog(c *fiber.Ctx) error {
 	})
 	links = append(links, stac.Link{
 		Rel:   "service-desc",
-		Type:  "application/vnd.oai.openapi+json;version=3.0",
+		Type:  "application/vnd.oai.openapi+json;version=3.1",
 		Title: "OpenAPI service description",
 		Href:  fmt.Sprintf("%s/openapi.json", baseURL),
 	})
