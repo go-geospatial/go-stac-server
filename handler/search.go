@@ -135,18 +135,21 @@ func Search(c *fiber.Ctx) error {
 		token := c.Query("token", "")
 		var queryPartsFull []string
 		if token != "" {
-			queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", token))
+			queryPartsFull = queryParts
+			queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", token))
 		}
 		query := strings.Join(queryPartsFull, "&")
 		overallLinks = stac.AddLink(overallLinks, baseURL, "self", fmt.Sprintf("/search?%s", query), "application/geo+json")
 
 		if featureCollection.Next != "" {
-			queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Next))
+			queryPartsFull = queryParts
+			queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", featureCollection.Next))
 			query := strings.Join(queryPartsFull, "&")
 			overallLinks = stac.AddLink(overallLinks, baseURL, "next", fmt.Sprintf("/search?%s", query), "application/geo+json")
 		}
 		if featureCollection.Prev != "" {
-			queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Prev))
+			queryPartsFull = queryParts
+			queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", featureCollection.Prev))
 			query := strings.Join(queryPartsFull, "&")
 			overallLinks = stac.AddLink(overallLinks, baseURL, "previous", fmt.Sprintf("/search?%s", query), "application/geo+json")
 		}

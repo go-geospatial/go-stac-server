@@ -538,9 +538,9 @@ func Items(c *fiber.Ctx) error {
 
 	queryParts := buildQueryArray(c)
 	token := c.Query("token", "")
-	var queryPartsFull []string
+	queryPartsFull := queryParts
 	if token != "" {
-		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", token))
+		queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", token))
 	}
 	query := strings.Join(queryPartsFull, "&")
 	if query != "" {
@@ -550,13 +550,15 @@ func Items(c *fiber.Ctx) error {
 	}
 
 	if featureCollection.Next != "" {
-		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Next))
+		queryPartsFull = queryParts
+		queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", featureCollection.Next))
 		query := strings.Join(queryPartsFull, "&")
 		overallLinks = stac.AddLink(overallLinks, baseURL, "next", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
 
 	if featureCollection.Prev != "" {
-		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Prev))
+		queryPartsFull = queryParts
+		queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", featureCollection.Prev))
 		query := strings.Join(queryPartsFull, "&")
 		overallLinks = stac.AddLink(overallLinks, baseURL, "previous", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
@@ -670,13 +672,15 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 	overallLinks = stac.AddLink(overallLinks, baseURL, "self", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 
 	if featureCollection.Next != "" {
-		queryPartsFull := append(queryParts, fmt.Sprintf("token=%s", featureCollection.Next))
+		queryPartsFull := queryParts
+		queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", featureCollection.Next))
 		query := strings.Join(queryPartsFull, "&")
 		overallLinks = stac.AddLink(overallLinks, baseURL, "next", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
 
 	if featureCollection.Prev != "" {
-		queryPartsFull := append(queryParts, fmt.Sprintf("token=%s", featureCollection.Prev))
+		queryPartsFull := queryParts
+		queryPartsFull = append(queryPartsFull, fmt.Sprintf("token=%s", featureCollection.Prev))
 		query := strings.Join(queryPartsFull, "&")
 		overallLinks = stac.AddLink(overallLinks, baseURL, "previous", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
