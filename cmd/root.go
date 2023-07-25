@@ -56,7 +56,11 @@ var rootCmd = &cobra.Command{
 		// we cannot connect to the database
 		pool := database.GetInstance(ctx)
 		defer pool.Close()
-		log.Info().Msg("successfully connected to database")
+
+		configBaseUrl := viper.GetString("server.baseUrl")
+		if configBaseUrl != "" {
+			log.Info().Str("BaseUrl", configBaseUrl).Msg("using configured base URL")
+		}
 
 		// Create new Fiber instance
 		app := fiber.New(fiber.Config{
@@ -144,6 +148,14 @@ func init() {
 		log.Panic().Err(err).Msg("could not bind port")
 	}
 
+	if err := viper.BindEnv("server.baseUrl", "BASE_URL"); err != nil {
+		log.Panic().Err(err).Msg("could not bind BASE_URL")
+	}
+	rootCmd.Flags().String("base-url", "", "Base URL for links")
+	if err := viper.BindPFlag("server.baseUrl", rootCmd.Flags().Lookup("base-url")); err != nil {
+		log.Panic().Err(err).Msg("could not bind base-url")
+	}
+
 	// Logging configuration
 	if err := viper.BindEnv("log.level", "LOG_LEVEL"); err != nil {
 		log.Panic().Err(err).Msg("could not bind LOG_LEVEL")
@@ -184,6 +196,31 @@ func init() {
 	rootCmd.PersistentFlags().String("dsn", "", "PostgreSQL connection string")
 	if err := viper.BindPFlag("database.dsn", rootCmd.PersistentFlags().Lookup("dsn")); err != nil {
 		log.Panic().Err(err).Msg("could not bind database.dsn")
+	}
+
+	// stac settings
+	if err := viper.BindEnv("stac.catalog.id", "STAC_CATALOG_ID"); err != nil {
+		log.Panic().Err(err).Msg("could not bind STAC_CATALOG_ID")
+	}
+	rootCmd.PersistentFlags().String("catalog-id", "stac-catalog", "STAC catalog ID")
+	if err := viper.BindPFlag("stac.catalog.id", rootCmd.PersistentFlags().Lookup("catalog-id")); err != nil {
+		log.Panic().Err(err).Msg("could not bind stac.catalog.id")
+	}
+
+	if err := viper.BindEnv("stac.catalog.title", "STAC_CATALOG_TITLE"); err != nil {
+		log.Panic().Err(err).Msg("could not bind STAC_CATALOG_TITLE")
+	}
+	rootCmd.PersistentFlags().String("catalog-title", "go-stac-server STAC Catalog", "STAC catalog title")
+	if err := viper.BindPFlag("stac.catalog.title", rootCmd.PersistentFlags().Lookup("catalog-title")); err != nil {
+		log.Panic().Err(err).Msg("could not bind stac.catalog.title")
+	}
+
+	if err := viper.BindEnv("stac.catalog.description", "STAC_CATALOG_DESCRIPTION"); err != nil {
+		log.Panic().Err(err).Msg("could not bind STAC_CATALOG_DESCRIPTION")
+	}
+	rootCmd.PersistentFlags().String("catalog-description", "STAC catalog served by go-stac-server", "STAC catalog description")
+	if err := viper.BindPFlag("stac.catalog.description", rootCmd.PersistentFlags().Lookup("catalog-id")); err != nil {
+		log.Panic().Err(err).Msg("could not bind stac.catalog.description")
 	}
 }
 

@@ -17,7 +17,9 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"regexp"
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,8 +38,20 @@ var QueryErrorCode string = "DatabaseQueryError"
 
 func GetInstance(ctx context.Context) *pgxpool.Pool {
 	once.Do(func() {
-		log.Debug().Str("DSN", viper.GetString("database.dsn")).Msg("initializing database pool connection for the first time")
-		var err error
+		// mask DSN password for logging
+		re, err := regexp.Compile(`^postgresql://(\w+)(:(password))?(.*)`)
+		if err != nil {
+			log.Error().Err(err).Msg("error compiling DSN password mask regex")
+		}
+		dsnMasked := viper.GetString("database.dsn")
+		parts := re.FindStringSubmatch(viper.GetString("database.dsn"))
+		if len(parts) == 0 {
+			log.Warn().Msg("DSN format not recognized, password masking disabled")
+		} else {
+			dsnMasked = fmt.Sprintf("postgresql://%s:***%s", parts[1], parts[4])
+		}
+
+		log.Info().Str("DSN", dsnMasked).Msg("initializing database pool connection")
 		instance, err = pgxpool.New(ctx, viper.GetString("database.dsn"))
 		if err != nil {
 			log.Error().Err(err).Msg("failed to create a new database pool")

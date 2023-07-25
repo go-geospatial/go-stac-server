@@ -19,8 +19,25 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/spf13/viper"
 )
 
 func getBaseUrl(c *fiber.Ctx) string {
-	return fmt.Sprintf("%s://%s", c.Protocol(), c.Hostname())
+	configBaseUrl := viper.GetString("server.baseUrl")
+	if configBaseUrl == "" {
+		host := c.Hostname()
+		forwardHost := c.Get(fiber.HeaderXForwardedHost)
+		if forwardHost != "" {
+			host = forwardHost
+		}
+
+		protocol := c.Protocol()
+		forwardProtocol := c.Get(fiber.HeaderXForwardedProto)
+		if forwardProtocol != "" {
+			protocol = forwardProtocol
+		}
+
+		return fmt.Sprintf("%s://%s", protocol, host)
+	}
+	return configBaseUrl
 }
