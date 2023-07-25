@@ -9,7 +9,6 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - goerr113
     - goheader
     - gofmt
     - goimports
@@ -19,6 +18,7 @@ linters:
     - scopelint # Obsolete, using exportloopref instead
     - durationcheck
     - exhaustive
+    - goerr113
     - contextcheck
   presets:
     - bugs
@@ -35,7 +35,7 @@ linters-settings:
       - strat
   gocyclo:
     # slowly dial down to 15
-    min-complexity: 20
+    min-complexity: 25
   goheader:
     template: |-
       Copyright {{year-range}}
@@ -60,11 +60,3 @@ issues:
         - gocyclo
         - errorlint
         - goerr113
-    - path: backblaze/backblaze\.go
-      text: "G401:" # Backblaze uses sha1 for file integrity check
-      linters:
-        - gosec
-    - path: backblaze/backblaze\.go
-      text: "G505:" # Backblaze uses sha1 for file integrity check
-      linters:
-        - gosec

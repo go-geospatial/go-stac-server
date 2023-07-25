@@ -28,6 +28,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+var CQLJSON = "cql-json"
+var CQL2JSON = "cql2-json"
+var CQLText = "cql2-text"
+
 func buildQueryArray(c *fiber.Ctx) []string {
 	queryParts := make([]string, 0, 5)
 	possible := []string{"collections", "limit", "bbox", "datetime", "filter", "filter-lang", "sortby", "fields"}
@@ -63,7 +67,7 @@ func getCQLFromBody(c *fiber.Ctx) (stac.CQL, error) {
 	}
 
 	if cql.FilterLang == "" {
-		cql.FilterLang = "cql-json"
+		cql.FilterLang = CQLJSON
 	}
 
 	return cql, nil
@@ -72,6 +76,7 @@ func getCQLFromBody(c *fiber.Ctx) (stac.CQL, error) {
 func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	collectionsStr := c.Query("collections", "")
 	limitStr := c.Query("limit", "10")
+	intersectsStr := c.Query("intersects", "")
 	bboxStr := c.Query("bbox", "")
 	dateStr := c.Query("datetime", "")
 	filterStr := c.Query("filter", "")
@@ -81,11 +86,7 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	token := c.Query("token", "")
 
 	// parse collections
-	collections, err := parseCollections(c, collectionsStr)
-	if err != nil {
-		// response and logging handled by parseCollections
-		return stac.CQL{}, err
-	}
+	collections := parseCollections(collectionsStr)
 
 	// parse limit
 	limit, err := parseLimit(c, limitStr)
@@ -128,6 +129,13 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 		return stac.CQL{}, err
 	}
 
+	// parse intersects
+	var intersects *stac.GeoJSON
+	if intersects, err = parseIntersects(c, intersectsStr); err != nil {
+		// http response and logging handled by parseIntersectsQuery
+		return stac.CQL{}, err
+	}
+
 	// create CQL search criteria
 	conf := json.RawMessage(`{"nohydrate": false}`)
 	cql := stac.CQL{
@@ -139,6 +147,10 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 
 	if collectionsStr != "" {
 		cql.Collections = collections
+	}
+
+	if intersectsStr != "" {
+		cql.Intersects = intersects
 	}
 
 	if fieldStr != "" {
@@ -163,28 +175,19 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	return cql, nil
 }
 
-func parseCollections(c *fiber.Ctx, collectionsStr string) ([]string, error) {
+func parseCollections(collectionsStr string) []string {
 	var collections []string
 	if collectionsStr != "" {
 		collections = strings.Split(collectionsStr, ",")
 	}
-	return collections, nil
+	return collections
 }
 
 func parseSort(c *fiber.Ctx, sortByStr string) ([]stac.CQLSort, error) {
 	var sort []stac.CQLSort
 	if sortByStr != "" {
 		sort = make([]stac.CQLSort, 0, 1)
-		sortRe, err := regexp.Compile(`^([\+-]?)(.*)$`)
-		if err != nil {
-			log.Error().Err(err).Msg("could not compile sortby regular expression")
-			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Message{
-				Code:        stac.ServerError,
-				Description: "regex error while validating sortby",
-			})
-			return sort, err
-		}
+		sortRe := regexp.MustCompile(`^([\+-]?)(.*)$`)
 		tokens := strings.Split(sortByStr, ",")
 		for _, token := range tokens {
 			groups := sortRe.FindStringSubmatch(token)
@@ -201,10 +204,12 @@ func parseSort(c *fiber.Ctx, sortByStr string) ([]stac.CQLSort, error) {
 				err := errors.New("sort field does not match regex")
 				log.Error().Err(err).Msg("sort field does not match regex")
 				c.Status(fiber.ErrInternalServerError.Code)
-				c.JSON(stac.Message{
+				if err2 := c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "sort expression must be of the form ([+-]?)(.*)",
-				})
+				}); err2 != nil {
+					return sort, err2
+				}
 				return sort, err
 			}
 		}
@@ -219,17 +224,7 @@ func parseFields(c *fiber.Ctx, fieldStr string) (stac.CQLFields, error) {
 		fields.Include = make([]string, 0, 5)
 		fields.Exclude = make([]string, 0, 5)
 
-		fieldsRe, err := regexp.Compile(`^([\+-]?)(.*)$`)
-		if err != nil {
-			log.Error().Err(err).Msg("could not compile fields regular expression")
-			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Message{
-				Code:        stac.ServerError,
-				Description: "regex error while validating fields",
-			})
-			return fields, err
-		}
-
+		fieldsRe := regexp.MustCompile(`^([\+-]?)(.*)$`)
 		tokens := strings.Split(fieldStr, ",")
 		for _, token := range tokens {
 			groups := fieldsRe.FindStringSubmatch(token)
@@ -243,10 +238,12 @@ func parseFields(c *fiber.Ctx, fieldStr string) (stac.CQLFields, error) {
 				err := errors.New("sort field does not match regex")
 				log.Error().Err(err).Msg("sort field does not match regex")
 				c.Status(fiber.ErrInternalServerError.Code)
-				c.JSON(stac.Message{
+				if err2 := c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "fields must be of the form ([-]?)(.*)",
-				})
+				}); err2 != nil {
+					return fields, err2
+				}
 				return fields, err
 			}
 		}
@@ -260,10 +257,12 @@ func parseLimit(c *fiber.Ctx, limitStr string) (int, error) {
 	if err != nil {
 		log.Error().Err(err).Str("limit", limitStr).Msg("could not convert limit to int")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: fmt.Sprintf("limit '%s' could not be converted to int", limitStr),
-		})
+		}); err2 != nil {
+			return 0, err2
+		}
 		return 0, err
 	}
 
@@ -279,10 +278,12 @@ func validateLimit(c *fiber.Ctx, limit int) error {
 		err := errors.New("limit out of bounds")
 		log.Error().Err(err).Int("limit", limit).Msg("limit out of bounds: 1 <= limit <= 10,000")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: fmt.Sprintf("limit '%d' must be between 1 and 10,000", limit),
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 	return nil
@@ -292,22 +293,13 @@ func parseRFC3339Date(c *fiber.Ctx, dateStr string) error {
 	if dateStr != "" {
 		if first, second, found := strings.Cut(dateStr, "/"); found {
 			// interval specified
-			re, err := regexp.Compile(`(\d{4})-(0[1-9]|1[0-2])-([01][\d]|3[01])[\sT]([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(Z|[\+-](0[\d]|1[\d]|2[0-3]):([0-5]\d))?|\.\.`)
-			if err != nil {
-				log.Error().Err(err).Msg("could not compile RFC3339 regular expression")
-				c.Status(fiber.ErrInternalServerError.Code)
-				return c.JSON(stac.Message{
-					Code:        stac.ServerError,
-					Description: "regex error while validating datetime",
-				})
-			}
-
+			re := regexp.MustCompile(`(\d{4})-(0[1-9]|1[0-2])-([01][\d]|3[01])[\sT]([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(Z|[\+-](0[\d]|1[\d]|2[0-3]):([0-5]\d))?|\.\.`)
 			if first == ".." && second == ".." {
 				// both parts of the interval cannot be open
 				c.Status(fiber.ErrUnprocessableEntity.Code)
 				return c.JSON(stac.Message{
 					Code:        stac.ParameterError,
-					Description: fmt.Sprintf("both sides of the interval cannot be open", dateStr),
+					Description: fmt.Sprintf("both sides of the interval cannot be open: %s", dateStr),
 				})
 			}
 
@@ -350,20 +342,22 @@ func parseRFC3339Date(c *fiber.Ctx, dateStr string) error {
 }
 
 func parseBboxQuery(c *fiber.Ctx, bboxStr string) ([]float64, error) {
+	var err error
 	bbox := make([]float64, 0, 6)
 	if bboxStr != "" {
 		bboxParts := strings.Split(bboxStr, ",")
 		for _, bboxCoord := range bboxParts {
-			if coord, err := strconv.ParseFloat(bboxCoord, 64); err != nil {
+			var coord float64
+			if coord, err = strconv.ParseFloat(bboxCoord, 64); err != nil {
 				log.Error().Err(err).Str("Coord", bboxCoord).Msg("could not convert bbox coordinate to float64")
 				c.Status(fiber.ErrUnprocessableEntity.Code)
 				return nil, c.JSON(stac.Message{
 					Code:        stac.ParameterError,
 					Description: fmt.Sprintf("could not parse bbox: '%s'; offending coordinate '%s'. bbox must be 4 or 6 float64 coordinates separated by commas. The coordinate order is: lower left axis-1, lower left axis-2, minimum axis-3 (optional), upper right axis-1, upper right axis-2, maximum axis-3 (optional)", bboxStr, bboxCoord),
 				})
-			} else {
-				bbox = append(bbox, coord)
 			}
+
+			bbox = append(bbox, coord)
 		}
 
 		if len(bbox) != 4 || len(bbox) != 6 {
@@ -380,16 +374,8 @@ func parseBboxQuery(c *fiber.Ctx, bboxStr string) ([]float64, error) {
 	return bbox, nil
 }
 
-func parseStringListQuery(c *fiber.Ctx, queryStr string) ([]string, error) {
-	var list []string
-	if queryStr != "" {
-		list = strings.Split(queryStr, ",")
-	}
-	return list, nil
-}
-
-func parseIntersectsQuery(c *fiber.Ctx, intersectsStr string) (*stac.GeoJson, error) {
-	var intersects stac.GeoJson
+func parseIntersects(c *fiber.Ctx, intersectsStr string) (*stac.GeoJSON, error) {
+	var intersects stac.GeoJSON
 	if intersectsStr != "" {
 		if err := json.Unmarshal([]byte(intersectsStr), &intersects); err != nil {
 			log.Error().Err(err).Str("intersects", intersectsStr).Msg("error parsing GeoJson intersects query")

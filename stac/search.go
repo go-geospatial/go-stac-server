@@ -38,7 +38,7 @@ type CQL struct {
 	Collections []string         `json:"collections,omitempty"`
 	Ids         []string         `json:"ids,omitempty"`
 	Bbox        []float64        `json:"bbox,omitempty"`
-	Intersects  *GeoJson         `json:"intersects,omitempty"`
+	Intersects  *GeoJSON         `json:"intersects,omitempty"`
 	DateTime    string           `json:"datetime,omitempty"`
 	Limit       int              `json:"limit"`
 	Conf        *json.RawMessage `json:"conf,omitempty"`
@@ -62,7 +62,7 @@ type SearchResponse struct {
 func Search(params CQL) (*SearchResponse, error) {
 	ctx := context.Background()
 
-	paramsJson, err := json.Marshal(params)
+	paramsJSON, err := json.Marshal(params)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal search parameters")
 		return nil, err
@@ -71,16 +71,16 @@ func Search(params CQL) (*SearchResponse, error) {
 	fmt.Printf("== %+v == \n", params)
 
 	pool := database.GetInstance(ctx)
-	row := pool.QueryRow(ctx, "SELECT search FROM search($1::text::jsonb)", paramsJson)
+	row := pool.QueryRow(ctx, "SELECT search FROM search($1::text::jsonb)", paramsJSON)
 
-	var searchJson []byte
-	if err := row.Scan(&searchJson); err != nil {
+	var searchJSON []byte
+	if err := row.Scan(&searchJSON); err != nil {
 		log.Error().Err(err).Msg("failed to scan JSON from postgresql search query")
 		return nil, err
 	}
 
 	var searchResponse SearchResponse
-	if err = json.Unmarshal(searchJson, &searchResponse); err != nil {
+	if err = json.Unmarshal(searchJSON, &searchResponse); err != nil {
 		log.Error().Err(err).Msg("failed to unmarshal search JSON")
 		return nil, err
 	}

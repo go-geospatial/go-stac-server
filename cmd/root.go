@@ -57,9 +57,9 @@ var rootCmd = &cobra.Command{
 		pool := database.GetInstance(ctx)
 		defer pool.Close()
 
-		configBaseUrl := viper.GetString("server.baseUrl")
-		if configBaseUrl != "" {
-			log.Info().Str("BaseUrl", configBaseUrl).Msg("using configured base URL")
+		configBaseURL := viper.GetString("server.baseUrl")
+		if configBaseURL != "" {
+			log.Info().Str("BaseUrl", configBaseURL).Msg("using configured base URL")
 		}
 
 		// Create new Fiber instance

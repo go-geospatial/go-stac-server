@@ -17,6 +17,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/go-geospatial/go-stac-server/database"
@@ -52,7 +53,7 @@ func ModifyCollection(c *fiber.Ctx) error {
 		return err
 	}
 
-	collectionJson, err := json.Marshal(collection)
+	collectionJSON, err := json.Marshal(collection)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal collection to JSON")
 		c.Status(fiber.ErrInternalServerError.Code)
@@ -69,7 +70,7 @@ func ModifyCollection(c *fiber.Ctx) error {
 	}
 
 	pool := database.GetInstance(ctx)
-	if _, err := pool.Exec(ctx, query, collectionJson); err != nil {
+	if _, err := pool.Exec(ctx, query, collectionJSON); err != nil {
 		log.Error().Err(err).Str("id", id).Str("raw", string(collectionRaw)).Msg("failed to create collection")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
 		return c.JSON(stac.Message{
@@ -85,11 +86,11 @@ func ModifyCollection(c *fiber.Ctx) error {
 // DELETE /collections
 func DeleteCollection(c *fiber.Ctx) error {
 	ctx := context.Background()
-	collectionId := c.Params("collectionId")
+	collectionID := c.Params("collectionId")
 
 	pool := database.GetInstance(ctx)
-	if _, err := pool.Exec(ctx, "SELECT delete_collection($1::text)", collectionId); err != nil {
-		log.Error().Err(err).Str("id", collectionId).Msg("collection not found")
+	if _, err := pool.Exec(ctx, "SELECT delete_collection($1::text)", collectionID); err != nil {
+		log.Error().Err(err).Str("id", collectionID).Msg("collection not found")
 		c.Status(fiber.ErrNotFound.Code)
 		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
@@ -107,48 +108,50 @@ func DeleteCollection(c *fiber.Ctx) error {
 // Collection returns details of a specific collection
 // GET /collections/:collectionId/
 func Collection(c *fiber.Ctx) error {
-	collectionId := c.Params("collectionId")
-	return collectionFromID(c, collectionId)
+	collectionID := c.Params("collectionId")
+	return collectionFromID(c, collectionID)
 }
 
-func collectionFromID(c *fiber.Ctx, collectionId string) error {
+func collectionFromID(c *fiber.Ctx, collectionID string) error {
 	ctx := context.Background()
-	baseUrl := getBaseUrl(c)
+	baseURL := getBaseURL(c)
 
 	// get a list of all collections
 	pool := database.GetInstance(ctx)
-	row := pool.QueryRow(ctx, "SELECT get_collection FROM pgstac.get_collection($1)", collectionId)
+	row := pool.QueryRow(ctx, "SELECT get_collection FROM pgstac.get_collection($1)", collectionID)
 
 	collection := make(map[string]*json.RawMessage, 20)
 	var rawCollection string
 	err := row.Scan(&rawCollection)
 	if err != nil {
-		switch err {
-		case pgx.ErrNoRows:
-			log.Error().Err(err).Str("collectionId", collectionId).Msg("collection not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			log.Error().Err(err).Str("collectionId", collectionID).Msg("collection not found")
 			c.Status(fiber.ErrNotFound.Code)
 			return c.JSON(stac.Message{
 				Code:        "404",
 				Description: "collection not found",
 			})
-		default:
-			log.Error().Err(err).Msg("could not scan collection id and title")
-			c.Status(fiber.ErrInternalServerError.Code)
-			return c.JSON(stac.Message{
-				Code:        database.QueryErrorCode,
-				Description: "could not serialize data from collections table",
-			})
 		}
+
+		log.Error().Err(err).Msg("could not scan collection id and title")
+		c.Status(fiber.ErrInternalServerError.Code)
+		return c.JSON(stac.Message{
+			Code:        database.QueryErrorCode,
+			Description: "could not serialize data from collections table",
+		})
 	}
 
 	// un-marshal to map
 	if err := json.Unmarshal([]byte(rawCollection), &collection); err != nil {
 		log.Error().Err(err).Msg("collection JSON unmarshal failed")
 		c.Status(fiber.ErrInternalServerError.Code)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        stac.JSONParsingError,
 			Description: "unable to un-marshal collection object JSON",
-		})
+		}); err2 != nil {
+			return err2
+		}
+		return err
 	}
 
 	// un-marshal links
@@ -157,29 +160,35 @@ func collectionFromID(c *fiber.Ctx, collectionId string) error {
 		if err := json.Unmarshal(*rawLinks, &links); err != nil {
 			log.Error().Err(err).Msg("collection JSON unmarshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Message{
+			if err2 := c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to un-marshal collection links JSON",
-			})
+			}); err2 != nil {
+				return err2
+			}
+			return err
 		}
 	}
 
 	// enrich links with self, root, parent, and items references
-	collectionsEndpoint := fmt.Sprintf("/collections/%s", collectionId)
-	links = stac.AddLink(links, baseUrl, "self", collectionsEndpoint, "application/json")
-	links = stac.AddLink(links, baseUrl, "root", "/", "application/json")
-	links = stac.AddLink(links, baseUrl, "parent", "/", "application/json")
-	links = stac.AddLink(links, baseUrl, "items", fmt.Sprintf("%s/items", collectionsEndpoint), "application/geo+json")
+	collectionsEndpoint := fmt.Sprintf("/collections/%s", collectionID)
+	links = stac.AddLink(links, baseURL, "self", collectionsEndpoint, "application/json")
+	links = stac.AddLink(links, baseURL, "root", "/", "application/json")
+	links = stac.AddLink(links, baseURL, "parent", "/", "application/json")
+	links = stac.AddLink(links, baseURL, "items", fmt.Sprintf("%s/items", collectionsEndpoint), "application/geo+json")
 
 	var serializedLinks json.RawMessage
 	serializedLinks, err = json.Marshal(links)
 	if err != nil {
 		log.Error().Err(err).Msg("collection links JSON marshal failed")
 		c.Status(fiber.ErrInternalServerError.Code)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        stac.JSONParsingError,
 			Description: "unable to marshal collection links to JSON",
-		})
+		}); err2 != nil {
+			return err2
+		}
+		return err
 	}
 	collection["links"] = &serializedLinks
 
@@ -190,7 +199,7 @@ func collectionFromID(c *fiber.Ctx, collectionId string) error {
 // GET /collections/
 func Collections(c *fiber.Ctx) error {
 	ctx := context.Background()
-	baseUrl := getBaseUrl(c)
+	baseURL := getBaseURL(c)
 
 	collections := make([]*json.RawMessage, 0, 10)
 
@@ -209,8 +218,8 @@ func Collections(c *fiber.Ctx) error {
 	for rows.Next() {
 		collection := make(map[string]*json.RawMessage, 20)
 		var rawCollection string
-		var collectionId string
-		err := rows.Scan(&collectionId, &rawCollection)
+		var collectionID string
+		err := rows.Scan(&collectionID, &rawCollection)
 		if err != nil {
 			log.Error().Err(err).Msg("could not scan collection id and title")
 			c.Status(fiber.ErrInternalServerError.Code)
@@ -224,10 +233,13 @@ func Collections(c *fiber.Ctx) error {
 		if err := json.Unmarshal([]byte(rawCollection), &collection); err != nil {
 			log.Error().Err(err).Msg("collection JSON unmarshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Message{
+			if err2 := c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to un-marshal collection object JSON",
-			})
+			}); err2 != nil {
+				return err2
+			}
+			return err
 		}
 
 		// un-marshal links
@@ -236,29 +248,35 @@ func Collections(c *fiber.Ctx) error {
 			if err := json.Unmarshal(*rawLinks, &links); err != nil {
 				log.Error().Err(err).Msg("collection JSON unmarshal failed")
 				c.Status(fiber.ErrInternalServerError.Code)
-				c.JSON(stac.Message{
+				if err2 := c.JSON(stac.Message{
 					Code:        stac.JSONParsingError,
 					Description: "unable to un-marshal collection links JSON",
-				})
+				}); err2 != nil {
+					return err2
+				}
+				return err
 			}
 		}
 
 		// enrich links with self, root, parent, and items references
-		collectionsEndpoint := fmt.Sprintf("/collections/%s", collectionId)
-		links = stac.AddLink(links, baseUrl, "self", collectionsEndpoint, "application/json")
-		links = stac.AddLink(links, baseUrl, "root", "/", "application/json")
-		links = stac.AddLink(links, baseUrl, "parent", "/", "application/json")
-		links = stac.AddLink(links, baseUrl, "items", fmt.Sprintf("%s/items", collectionsEndpoint), "application/geo+json")
+		collectionsEndpoint := fmt.Sprintf("/collections/%s", collectionID)
+		links = stac.AddLink(links, baseURL, "self", collectionsEndpoint, "application/json")
+		links = stac.AddLink(links, baseURL, "root", "/", "application/json")
+		links = stac.AddLink(links, baseURL, "parent", "/", "application/json")
+		links = stac.AddLink(links, baseURL, "items", fmt.Sprintf("%s/items", collectionsEndpoint), "application/geo+json")
 
 		var serializedLinks json.RawMessage
 		serializedLinks, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("collection links JSON marshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Message{
+			if err2 := c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to marshal collection links to JSON",
-			})
+			}); err2 != nil {
+				return err2
+			}
+			return err
 		}
 		collection["links"] = &serializedLinks
 
@@ -267,18 +285,21 @@ func Collections(c *fiber.Ctx) error {
 		if err != nil {
 			log.Error().Err(err).Msg("collection JSON marshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			c.JSON(stac.Message{
+			if err2 := c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to marshal collection to JSON",
-			})
+			}); err2 != nil {
+				return err2
+			}
+			return err
 		}
 		collections = append(collections, &serializedCollection)
 	}
 
 	overallLinks := make([]stac.Link, 0, 3)
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "self", "/collections", "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "root", "/", "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "parent", "/", "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "self", "/collections", "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "root", "/", "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "parent", "/", "application/json")
 
 	return c.JSON(struct {
 		Collections []*json.RawMessage `json:"collections"`

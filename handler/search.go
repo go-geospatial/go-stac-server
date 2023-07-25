@@ -29,7 +29,7 @@ import (
 // GET /search
 // POST /search
 func Search(c *fiber.Ctx) error {
-	baseUrl := getBaseUrl(c)
+	baseURL := getBaseURL(c)
 	token := c.Query("token", "")
 
 	var cql stac.CQL
@@ -68,11 +68,11 @@ func Search(c *fiber.Ctx) error {
 
 	// enrich links
 	for _, item := range featureCollection.Features {
-		var myLinksJson json.RawMessage
-		var itemId string
+		var myLinksJSON json.RawMessage
+		var itemID string
 		var links []stac.Link
 
-		if err := json.Unmarshal(*item["id"], &itemId); err != nil {
+		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
 			c.Status(fiber.ErrInternalServerError.Code)
 			return c.JSON(stac.Message{
@@ -90,8 +90,8 @@ func Search(c *fiber.Ctx) error {
 			})
 		}
 
-		var collectionId string
-		if err := json.Unmarshal(*item["collection"], &collectionId); err != nil {
+		var collectionID string
+		if err := json.Unmarshal(*item["collection"], &collectionID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing collectionId")
 			c.Status(fiber.ErrInternalServerError.Code)
 			return c.JSON(stac.Message{
@@ -102,16 +102,16 @@ func Search(c *fiber.Ctx) error {
 
 		for idx, link := range links {
 			if link.Rel == "collection" {
-				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseUrl, collectionId)
+				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseURL, collectionID)
 			}
 			links[idx] = link
 		}
 
-		links = stac.AddLink(links, baseUrl, "parent", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-		links = stac.AddLink(links, baseUrl, "root", "/", "application/json")
-		links = stac.AddLink(links, baseUrl, "self", fmt.Sprintf("/collections/%s/items/%s", collectionId, itemId), "application/geo+json")
+		links = stac.AddLink(links, baseURL, "parent", fmt.Sprintf("/collections/%s", collectionID), "application/json")
+		links = stac.AddLink(links, baseURL, "root", "/", "application/json")
+		links = stac.AddLink(links, baseURL, "self", fmt.Sprintf("/collections/%s/items/%s", collectionID, itemID), "application/geo+json")
 
-		myLinksJson, err = json.Marshal(links)
+		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
 			c.Status(fiber.ErrInternalServerError.Code)
@@ -121,13 +121,13 @@ func Search(c *fiber.Ctx) error {
 			})
 		}
 
-		item["links"] = &myLinksJson
+		item["links"] = &myLinksJSON
 	}
 
 	// overall links
 	overallLinks := make([]stac.Link, 0, 5)
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "parent", "/", "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "root", "/", "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "parent", "/", "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "root", "/", "application/json")
 
 	switch c.Method() {
 	case "GET":
@@ -138,17 +138,17 @@ func Search(c *fiber.Ctx) error {
 			queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", token))
 		}
 		query := strings.Join(queryPartsFull, "&")
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "self", fmt.Sprintf("/search?%s", query), "application/geo+json")
+		overallLinks = stac.AddLink(overallLinks, baseURL, "self", fmt.Sprintf("/search?%s", query), "application/geo+json")
 
 		if featureCollection.Next != "" {
 			queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Next))
 			query := strings.Join(queryPartsFull, "&")
-			overallLinks = stac.AddLink(overallLinks, baseUrl, "next", fmt.Sprintf("/search?%s", query), "application/geo+json")
+			overallLinks = stac.AddLink(overallLinks, baseURL, "next", fmt.Sprintf("/search?%s", query), "application/geo+json")
 		}
 		if featureCollection.Prev != "" {
 			queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Prev))
 			query := strings.Join(queryPartsFull, "&")
-			overallLinks = stac.AddLink(overallLinks, baseUrl, "previous", fmt.Sprintf("/search?%s", query), "application/geo+json")
+			overallLinks = stac.AddLink(overallLinks, baseURL, "previous", fmt.Sprintf("/search?%s", query), "application/geo+json")
 		}
 	case "POST":
 		var jsonRaw json.RawMessage
@@ -160,7 +160,7 @@ func Search(c *fiber.Ctx) error {
 				Description: "error serializing cql",
 			})
 		}
-		overallLinks = stac.AddLinkPost(overallLinks, baseUrl, "self", "/search", "application/geo+json", &jsonRaw)
+		overallLinks = stac.AddLinkPost(overallLinks, baseURL, "self", "/search", "application/geo+json", &jsonRaw)
 
 		if featureCollection.Next != "" {
 			var jsonRaw json.RawMessage
@@ -173,7 +173,7 @@ func Search(c *fiber.Ctx) error {
 					Description: "error serializing cql",
 				})
 			}
-			overallLinks = stac.AddLinkPost(overallLinks, baseUrl, "next", "/search", "application/geo+json", &jsonRaw)
+			overallLinks = stac.AddLinkPost(overallLinks, baseURL, "next", "/search", "application/geo+json", &jsonRaw)
 		}
 		if featureCollection.Prev != "" {
 			var jsonRaw json.RawMessage
@@ -186,7 +186,7 @@ func Search(c *fiber.Ctx) error {
 					Description: "error serializing cql",
 				})
 			}
-			overallLinks = stac.AddLinkPost(overallLinks, baseUrl, "previous", "/search", "application/geo+json", &jsonRaw)
+			overallLinks = stac.AddLinkPost(overallLinks, baseURL, "previous", "/search", "application/geo+json", &jsonRaw)
 		}
 	default:
 		log.Fatal().Str("Method", c.Method()).Msg("mis-configured routes - unsupported method")

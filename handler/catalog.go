@@ -29,8 +29,8 @@ import (
 func Catalog(c *fiber.Ctx) error {
 	ctx := context.Background()
 
-	baseUrl := getBaseUrl(c)
-	self := fmt.Sprintf("%s/api/stac/v1", baseUrl)
+	baseURL := getBaseURL(c)
+	self := fmt.Sprintf("%s/api/stac/v1", baseURL)
 	links := make([]stac.Link, 0, 100)
 	links = append(links, stac.Link{
 		Rel:  "self",
@@ -71,13 +71,13 @@ func Catalog(c *fiber.Ctx) error {
 		Rel:   "service-desc",
 		Type:  "application/vnd.oai.openapi+json;version=3.0",
 		Title: "OpenAPI service description",
-		Href:  fmt.Sprintf("%s/openapi.json", baseUrl),
+		Href:  fmt.Sprintf("%s/openapi.json", baseURL),
 	})
 	links = append(links, stac.Link{
 		Rel:   "service-doc",
 		Type:  "text/html",
 		Title: "OpenAPI service documentation",
-		Href:  fmt.Sprintf("%s/doc/", baseUrl),
+		Href:  fmt.Sprintf("%s/doc/", baseURL),
 	})
 
 	// get a list of all collections
@@ -97,8 +97,8 @@ func Catalog(c *fiber.Ctx) error {
 			Rel:  "child",
 			Type: "application/json",
 		}
-		var collectionId string
-		err := rows.Scan(&collectionId, &child.Title)
+		var collectionID string
+		err := rows.Scan(&collectionID, &child.Title)
 		if err != nil {
 			log.Error().Err(err).Msg("could not scan collection id and title")
 			c.Status(fiber.ErrInternalServerError.Code)
@@ -107,7 +107,7 @@ func Catalog(c *fiber.Ctx) error {
 				Description: "could not serialize data from collections table",
 			})
 		}
-		child.Href = fmt.Sprintf("%s/collections/%s", self, collectionId)
+		child.Href = fmt.Sprintf("%s/collections/%s", self, collectionID)
 		links = append(links, child)
 	}
 

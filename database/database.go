@@ -32,17 +32,14 @@ var (
 	instance *pgxpool.Pool
 )
 
-var ConnectionErrorCode string = "DatabaseConnectionError"
-var ConnectionErrorDescription string = "Could not connect to database"
-var QueryErrorCode string = "DatabaseQueryError"
+var ConnectionErrorCode = "DatabaseConnectionError"
+var ConnectionErrorDescription = "Could not connect to database"
+var QueryErrorCode = "DatabaseQueryError"
 
 func GetInstance(ctx context.Context) *pgxpool.Pool {
 	once.Do(func() {
 		// mask DSN password for logging
-		re, err := regexp.Compile(`^postgresql://(\w+)(:(password))?(.*)`)
-		if err != nil {
-			log.Error().Err(err).Msg("error compiling DSN password mask regex")
-		}
+		re := regexp.MustCompile(`^postgresql://(\w+)(:(password))?(.*)`)
 		dsnMasked := viper.GetString("database.dsn")
 		parts := re.FindStringSubmatch(viper.GetString("database.dsn"))
 		if len(parts) == 0 {
@@ -52,6 +49,7 @@ func GetInstance(ctx context.Context) *pgxpool.Pool {
 		}
 
 		log.Info().Str("DSN", dsnMasked).Msg("initializing database pool connection")
+		var err error
 		instance, err = pgxpool.New(ctx, viper.GetString("database.dsn"))
 		if err != nil {
 			log.Error().Err(err).Msg("failed to create a new database pool")

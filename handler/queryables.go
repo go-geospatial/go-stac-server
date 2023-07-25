@@ -27,17 +27,17 @@ import (
 
 func Queryables(c *fiber.Ctx) error {
 	ctx := context.Background()
-	collectionId := c.Params("collectionId")
+	collectionID := c.Params("collectionId")
 	var raw json.RawMessage
 
-	pCollectionId := &collectionId
-	if collectionId == "" {
-		pCollectionId = nil
+	pCollectionID := &collectionID
+	if collectionID == "" {
+		pCollectionID = nil
 	}
 
 	pool := database.GetInstance(ctx)
-	if err := pool.QueryRow(ctx, "SELECT get_queryables FROM get_queryables($1::text)", pCollectionId).Scan(&raw); err != nil {
-		log.Error().Err(err).Str("collection", collectionId).Msg("failed to get queryables from database")
+	if err := pool.QueryRow(ctx, "SELECT get_queryables FROM get_queryables($1::text)", pCollectionID).Scan(&raw); err != nil {
+		log.Error().Err(err).Str("collection", collectionID).Msg("failed to get queryables from database")
 		c.Status(fiber.ErrInternalServerError.Code)
 		return c.JSON(stac.Message{
 			Code:        "DatabaseError",

@@ -56,10 +56,12 @@ func Merge(a, b []byte) (json.RawMessage, error) {
 		}
 	}
 
-	if result, err := json.Marshal(bMap); err != nil {
+	var result []byte
+	var err error
+	if result, err = json.Marshal(bMap); err != nil {
 		log.Error().Err(err).Msg("cannot marshal b JSON")
 		return []byte{}, err
-	} else {
-		return result, nil
 	}
+
+	return result, nil
 }

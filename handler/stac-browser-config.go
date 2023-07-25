@@ -23,6 +23,6 @@ import (
 
 func StacBrowserConfig(c *fiber.Ctx) error {
 	data := []byte(fmt.Sprintf("window.STAC_BROWSER_CONFIG = {catalogUrl: \"%s://%s/api/stac/v1\"}", c.Protocol(), c.Hostname()))
-	c.Status(200).Write(data)
-	return nil
+	_, err := c.Status(200).Write(data)
+	return err
 }

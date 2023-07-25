@@ -34,8 +34,8 @@ type Link struct {
 // rel is the name of the link relationship
 // baseUrl baseUrl of this STAC server
 // endpoint is the last portion of the URL i.e. <base url>/api/stac/v1/<endpoint>
-func AddLink(links []Link, baseUrl string, rel string, endpoint string, mimeType string) []Link {
-	href := fmt.Sprintf("%s/api/stac/v1%s", baseUrl, endpoint)
+func AddLink(links []Link, baseURL string, rel string, endpoint string, mimeType string) []Link {
+	href := fmt.Sprintf("%s/api/stac/v1%s", baseURL, endpoint)
 	links = append(links, Link{
 		Rel:  rel,
 		Type: mimeType,
@@ -49,8 +49,8 @@ func AddLink(links []Link, baseUrl string, rel string, endpoint string, mimeType
 // rel is the name of the link relationship
 // baseUrl baseUrl of this STAC server
 // endpoint is the last portion of the URL i.e. <base url>/api/stac/v1/<endpoint>
-func AddLinkPost(links []Link, baseUrl string, rel string, endpoint string, mimeType string, body *json.RawMessage) []Link {
-	href := fmt.Sprintf("%s/api/stac/v1%s", baseUrl, endpoint)
+func AddLinkPost(links []Link, baseURL string, rel string, endpoint string, mimeType string, body *json.RawMessage) []Link {
+	href := fmt.Sprintf("%s/api/stac/v1%s", baseURL, endpoint)
 	links = append(links, Link{
 		Rel:    rel,
 		Type:   mimeType,

@@ -20,8 +20,8 @@ type Message struct {
 	Description string `json:"description"`
 }
 
-var JSONParsingError string = "JSONParsingError"
-var NotFoundError string = "NotFoundError"
-var DatabaseError string = "DatabaseError"
-var ParameterError string = "ParameterError"
-var ServerError string = "ServerError"
+var JSONParsingError = "JSONParsingError"
+var NotFoundError = "NotFoundError"
+var DatabaseError = "DatabaseError"
+var ParameterError = "ParameterError"
+var ServerError = "ServerError"

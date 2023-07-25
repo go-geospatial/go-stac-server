@@ -25,7 +25,9 @@ type Catalog struct {
 	Links       []Link   `json:"links"`
 }
 
-var Conformance []string = []string{
+var CollectionKey = "collection"
+
+var Conformance = []string{
 	"http://www.opengis.net/spec/cql2/1.0/conf/basic-cql2",
 	"http://www.opengis.net/spec/cql2/1.0/conf/cql2-json",
 	// TODO: "http://www.opengis.net/spec/cql2/1.0/conf/cql2-text",

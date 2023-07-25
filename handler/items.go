@@ -33,17 +33,19 @@ import (
 // DELETE /collections/:collectionId/items/:itemId
 func DeleteItem(c *fiber.Ctx) error {
 	ctx := context.Background()
-	collectionId := c.Params("collectionId")
-	itemId := c.Params("itemId")
+	collectionID := c.Params("collectionId")
+	itemID := c.Params("itemId")
 
 	pool := database.GetInstance(ctx)
-	if _, err := pool.Exec(ctx, "SELECT delete_item($1::text, $2::text);", itemId, collectionId); err != nil {
+	if _, err := pool.Exec(ctx, "SELECT delete_item($1::text, $2::text);", itemID, collectionID); err != nil {
 		log.Error().Err(err).Msg("received error while trying to delete item")
 		c.Status(fiber.ErrNotFound.Code)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "DeleteItemFailed",
 			Description: "cannot find item; failed to delete.",
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
@@ -57,23 +59,25 @@ func DeleteItem(c *fiber.Ctx) error {
 // PUT /collections/:collectionId/items/:itemId
 func UpdateItem(c *fiber.Ctx) error {
 	ctx := context.Background()
-	collectionId := c.Params("collectionId")
-	itemId := c.Params("itemId")
+	collectionID := c.Params("collectionId")
+	itemID := c.Params("itemId")
 
 	// set collectionId and and itemId from URL
 	item := make(map[string]*json.RawMessage)
 	if err := json.Unmarshal(c.Body(), &item); err != nil {
 		log.Error().Err(err).Msg("failed to un-marshal body")
 		c.Status(fiber.StatusUnprocessableEntity)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "PutItemFailed",
 			Description: "failed to parse http body as JSON",
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
 	// Check that the id's supplied match those from the URL. If no id's supplied populate with values from URL
-	item, err := checkBodyIdAgainstURL(c, collectionId, itemId, item)
+	item, err := checkBodyIDAgainstURL(c, collectionID, itemID, item)
 	if err != nil {
 		return err
 	}
@@ -85,10 +89,12 @@ func UpdateItem(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msg("failed to serialize item")
 		c.Status(fiber.StatusInternalServerError)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "ItemSerializeFailed",
 			Description: "could not serialize item",
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
@@ -96,37 +102,41 @@ func UpdateItem(c *fiber.Ctx) error {
 	if _, err := pool.Exec(ctx, "SELECT update_item($1::text::jsonb);", putItem); err != nil {
 		log.Error().Err(err).Msg("received error while trying to update item")
 		c.Status(fiber.StatusNotFound)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "PutItemFailed",
-			Description: fmt.Sprintf("collection %s does not contain an item with id %s", collectionId, itemId),
-		})
+			Description: fmt.Sprintf("collection %s does not contain an item with id %s", collectionID, itemID),
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
-	return itemFromID(c, collectionId, itemId)
+	return itemFromID(c, collectionID, itemID)
 }
 
 // PatchItem updates an item with only the specific fields provided by request body
 // PATCH /collections/:collectionId/items/:itemId
 func PatchItem(c *fiber.Ctx) error {
 	ctx := context.Background()
-	collectionId := c.Params("collectionId")
-	itemId := c.Params("itemId")
+	collectionID := c.Params("collectionId")
+	itemID := c.Params("itemId")
 
 	// set collectionId and and itemId from URL
 	item := make(map[string]*json.RawMessage)
 	if err := json.Unmarshal(c.Body(), &item); err != nil {
 		log.Error().Err(err).Msg("failed to un-marshal body")
 		c.Status(fiber.StatusUnprocessableEntity)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "PatchItemFailed",
 			Description: "failed to parse http body as JSON",
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
 	// Check that the id's supplied match those from the URL. If no id's supplied populate with values from URL
-	item, err := checkBodyIdAgainstURL(c, collectionId, itemId, item)
+	item, err := checkBodyIDAgainstURL(c, collectionID, itemID, item)
 	if err != nil {
 		return err
 	}
@@ -134,13 +144,15 @@ func PatchItem(c *fiber.Ctx) error {
 	// get the item from the database
 	pool := database.GetInstance(ctx)
 	var dbItemRaw string
-	if err := pool.QueryRow(ctx, "SELECT get_item FROM get_item($1::text, $2::text);", itemId, collectionId).Scan(&dbItemRaw); err != nil {
+	if err := pool.QueryRow(ctx, "SELECT get_item FROM get_item($1::text, $2::text);", itemID, collectionID).Scan(&dbItemRaw); err != nil {
 		log.Error().Err(err).Msg("failed load item from database")
 		c.Status(fiber.StatusNotFound)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "ItemNotFound",
 			Description: "item was not found",
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
@@ -148,10 +160,12 @@ func PatchItem(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msg("failed to serialize item")
 		c.Status(fiber.StatusInternalServerError)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "ItemSerializeFailed",
 			Description: "could not serialize item",
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
@@ -160,10 +174,12 @@ func PatchItem(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error().Err(err).Msg("failed to merge items")
 		c.Status(fiber.StatusInternalServerError)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "MergeItem",
 			Description: "failed to merge items",
-		})
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
@@ -171,14 +187,16 @@ func PatchItem(c *fiber.Ctx) error {
 	if _, err := pool.Exec(ctx, "SELECT update_item($1::text::jsonb);", mergedItem); err != nil {
 		log.Error().Err(err).Msg("received error while trying to update item")
 		c.Status(fiber.StatusNotFound)
-		c.JSON(stac.Message{
+		if err2 := c.JSON(stac.Message{
 			Code:        "PutItemFailed",
-			Description: fmt.Sprintf("collection %s does not contain an item with id %s", collectionId, itemId),
-		})
+			Description: fmt.Sprintf("collection %s does not contain an item with id %s", collectionID, itemID),
+		}); err2 != nil {
+			return err2
+		}
 		return err
 	}
 
-	return itemFromID(c, collectionId, itemId)
+	return itemFromID(c, collectionID, itemID)
 }
 
 // CreateItems creates a new collection in the database
@@ -227,21 +245,21 @@ func CreateItems(c *fiber.Ctx) error {
 
 func createFeature(c *fiber.Ctx, items map[string]*json.RawMessage, itemsRaw []byte) error {
 	ctx := context.Background()
-	collectionId := c.Params("collectionId")
+	collectionID := c.Params("collectionId")
 	var err error
 
 	// validate collection matches the expected collection
-	if err = stac.ValidateCollectionIDsMatch(c, items, collectionId); err != nil {
+	if err = stac.ValidateCollectionIDsMatch(c, items, collectionID); err != nil {
 		return err
 	}
 
-	// validate item itemId
-	var itemId string
-	if itemId, err = stac.ValidateID(c, items); err != nil {
+	// validate item itemID
+	var itemID string
+	if itemID, err = stac.ValidateID(c, items); err != nil {
 		return err
 	}
 
-	itemsJson, err := json.Marshal(items)
+	itemsJSON, err := json.Marshal(items)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal items to JSON")
 		c.Status(fiber.ErrInternalServerError.Code)
@@ -252,8 +270,8 @@ func createFeature(c *fiber.Ctx, items map[string]*json.RawMessage, itemsRaw []b
 	}
 
 	pool := database.GetInstance(ctx)
-	if _, err := pool.Exec(ctx, "SELECT create_item($1::text::jsonb)", itemsJson); err != nil {
-		log.Error().Err(err).Str("id", itemId).Str("raw", string(itemsRaw)).Msg("failed to create item")
+	if _, err := pool.Exec(ctx, "SELECT create_item($1::text::jsonb)", itemsJSON); err != nil {
+		log.Error().Err(err).Str("id", itemID).Str("raw", string(itemsRaw)).Msg("failed to create item")
 		c.Status(fiber.ErrConflict.Code)
 		return c.JSON(stac.Message{
 			Code:        "CreateItemFailed",
@@ -261,12 +279,12 @@ func createFeature(c *fiber.Ctx, items map[string]*json.RawMessage, itemsRaw []b
 		})
 	}
 
-	return itemFromID(c, collectionId, itemId)
+	return itemFromID(c, collectionID, itemID)
 }
 
 func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, itemsRaw []byte) error {
 	ctx := context.Background()
-	collectionId := c.Params("collectionId")
+	collectionID := c.Params("collectionId")
 
 	// for each feature validate collection matches the expected collection
 	var featuresRaw *json.RawMessage
@@ -292,20 +310,20 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 
 	itemIds := make([]string, len(features))
 	for idx, feature := range features {
-		if err := stac.ValidateCollectionIDsMatch(c, feature, collectionId); err != nil {
+		if err := stac.ValidateCollectionIDsMatch(c, feature, collectionID); err != nil {
 			log.Error().Int("FeatureIndex", idx).Msg("failed collection ID match validation")
 			return err
 		}
-		itemId, err := stac.ValidateID(c, feature)
+		itemID, err := stac.ValidateID(c, feature)
 		if err != nil {
 			log.Error().Int("FeatureIndex", idx).Msg("failed ID validation")
 			return err
 		}
-		itemIds[idx] = itemId
+		itemIds[idx] = itemID
 	}
 
 	// validation has passed, create items
-	itemsJson, err := json.Marshal(items)
+	itemsJSON, err := json.Marshal(items)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal items to JSON")
 		c.Status(fiber.ErrInternalServerError.Code)
@@ -316,7 +334,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	}
 
 	pool := database.GetInstance(ctx)
-	if _, err := pool.Exec(ctx, "SELECT create_items($1::text::jsonb)", itemsJson); err != nil {
+	if _, err := pool.Exec(ctx, "SELECT create_items($1::text::jsonb)", itemsJSON); err != nil {
 		log.Error().Err(err).Strs("id", itemIds).Str("raw", string(itemsRaw)).Msg("failed to create item")
 		c.Status(fiber.ErrConflict.Code)
 		return c.JSON(stac.Message{
@@ -331,23 +349,23 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 // Item returns details of a specific item
 // GET /collections/:collectionId/items/:itemId
 func Item(c *fiber.Ctx) error {
-	collectionId := c.Params("collectionId")
-	itemId := c.Params("itemId")
+	collectionID := c.Params("collectionId")
+	itemID := c.Params("itemId")
 
-	return itemFromID(c, collectionId, itemId)
+	return itemFromID(c, collectionID, itemID)
 }
 
-func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
+func itemFromID(c *fiber.Ctx, collectionID string, itemID string) error {
 	ctx := context.Background()
-	baseUrl := getBaseUrl(c)
+	baseURL := getBaseURL(c)
 
 	pool := database.GetInstance(ctx)
 
 	// make sure the requested collection exists
-	row := pool.QueryRow(ctx, "SELECT id FROM pgstac.collections WHERE id=$1", collectionId)
+	row := pool.QueryRow(ctx, "SELECT id FROM pgstac.collections WHERE id=$1", collectionID)
 	var dbResult string
 	if err := row.Scan(&dbResult); err != nil {
-		log.Error().Err(err).Str("collectionId", collectionId).Msg("collection does not exist in database")
+		log.Error().Err(err).Str("collectionId", collectionID).Msg("collection does not exist in database")
 		c.Status(fiber.ErrNotFound.Code)
 		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
@@ -358,8 +376,8 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 	// create CQL search criteria
 	conf := json.RawMessage(`{"nohydrate": false}`)
 	cql := stac.CQL{
-		Collections: []string{collectionId},
-		Ids:         []string{itemId},
+		Collections: []string{collectionID},
+		Ids:         []string{itemID},
 		Conf:        &conf,
 		Limit:       1,
 	}
@@ -378,11 +396,11 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 	// enrich links
 	var myItem map[string]*json.RawMessage
 	for _, item := range featureCollection.Features {
-		var myLinksJson json.RawMessage
-		var itemId string
+		var myLinksJSON json.RawMessage
+		var itemID string
 		var links []stac.Link
 
-		if err := json.Unmarshal(*item["id"], &itemId); err != nil {
+		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
 			c.Status(fiber.ErrInternalServerError.Code)
 			return c.JSON(stac.Message{
@@ -400,17 +418,17 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 			})
 		}
 		for idx, link := range links {
-			if link.Rel == "collection" {
-				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseUrl, collectionId)
+			if link.Rel == stac.CollectionKey {
+				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseURL, collectionID)
 			}
 			links[idx] = link
 		}
 
-		links = stac.AddLink(links, baseUrl, "parent", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-		links = stac.AddLink(links, baseUrl, "root", "/", "application/json")
-		links = stac.AddLink(links, baseUrl, "self", fmt.Sprintf("/collections/%s/items/%s", collectionId, itemId), "application/geo+json")
+		links = stac.AddLink(links, baseURL, "parent", fmt.Sprintf("/collections/%s", collectionID), "application/json")
+		links = stac.AddLink(links, baseURL, "root", "/", "application/json")
+		links = stac.AddLink(links, baseURL, "self", fmt.Sprintf("/collections/%s/items/%s", collectionID, itemID), "application/geo+json")
 
-		myLinksJson, err = json.Marshal(links)
+		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
 			c.Status(fiber.ErrInternalServerError.Code)
@@ -420,7 +438,7 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 			})
 		}
 
-		item["links"] = &myLinksJson
+		item["links"] = &myLinksJSON
 		myItem = item
 	}
 
@@ -431,16 +449,16 @@ func itemFromID(c *fiber.Ctx, collectionId string, itemId string) error {
 // GET /collections/:collectionId/items
 func Items(c *fiber.Ctx) error {
 	ctx := context.Background()
-	baseUrl := getBaseUrl(c)
-	collectionId := c.Params("collectionId")
+	baseURL := getBaseURL(c)
+	collectionID := c.Params("collectionId")
 
 	pool := database.GetInstance(ctx)
 
 	// make sure the requested collection exists
-	row := pool.QueryRow(ctx, "SELECT id FROM pgstac.collections WHERE id=$1", collectionId)
+	row := pool.QueryRow(ctx, "SELECT id FROM pgstac.collections WHERE id=$1", collectionID)
 	var dbResult string
 	if err := row.Scan(&dbResult); err != nil {
-		log.Error().Err(err).Str("collectionId", collectionId).Msg("collection does not exist in database")
+		log.Error().Err(err).Str("collectionId", collectionID).Msg("collection does not exist in database")
 		c.Status(fiber.ErrNotFound.Code)
 		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
@@ -454,7 +472,7 @@ func Items(c *fiber.Ctx) error {
 		// http response and logging handled by getCQLFromQuery
 		return err
 	}
-	cql.Collections = []string{collectionId}
+	cql.Collections = []string{collectionID}
 	featureCollection, err := stac.Search(cql)
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
@@ -467,11 +485,11 @@ func Items(c *fiber.Ctx) error {
 
 	// enrich links
 	for _, item := range featureCollection.Features {
-		var myLinksJson json.RawMessage
-		var itemId string
+		var myLinksJSON json.RawMessage
+		var itemID string
 		var links []stac.Link
 
-		if err := json.Unmarshal(*item["id"], &itemId); err != nil {
+		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
 			c.Status(fiber.ErrInternalServerError.Code)
 			return c.JSON(stac.Message{
@@ -489,17 +507,17 @@ func Items(c *fiber.Ctx) error {
 			})
 		}
 		for idx, link := range links {
-			if link.Rel == "collection" {
-				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseUrl, collectionId)
+			if link.Rel == stac.CollectionKey {
+				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseURL, collectionID)
 			}
 			links[idx] = link
 		}
 
-		links = stac.AddLink(links, baseUrl, "parent", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-		links = stac.AddLink(links, baseUrl, "root", "/", "application/json")
-		links = stac.AddLink(links, baseUrl, "self", fmt.Sprintf("/collections/%s/items/%s", collectionId, itemId), "application/geo+json")
+		links = stac.AddLink(links, baseURL, "parent", fmt.Sprintf("/collections/%s", collectionID), "application/json")
+		links = stac.AddLink(links, baseURL, "root", "/", "application/json")
+		links = stac.AddLink(links, baseURL, "self", fmt.Sprintf("/collections/%s/items/%s", collectionID, itemID), "application/geo+json")
 
-		myLinksJson, err = json.Marshal(links)
+		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
 			c.Status(fiber.ErrInternalServerError.Code)
@@ -509,14 +527,14 @@ func Items(c *fiber.Ctx) error {
 			})
 		}
 
-		item["links"] = &myLinksJson
+		item["links"] = &myLinksJSON
 	}
 
 	// overall links
 	overallLinks := make([]stac.Link, 0, 4)
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "collection", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "parent", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "root", "/", "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "collection", fmt.Sprintf("/collections/%s", collectionID), "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "parent", fmt.Sprintf("/collections/%s", collectionID), "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "root", "/", "application/json")
 
 	queryParts := buildQueryArray(c)
 	token := c.Query("token", "")
@@ -526,21 +544,21 @@ func Items(c *fiber.Ctx) error {
 	}
 	query := strings.Join(queryPartsFull, "&")
 	if query != "" {
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "self", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
+		overallLinks = stac.AddLink(overallLinks, baseURL, "self", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	} else {
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "self", fmt.Sprintf("/collections/%s/items", collectionId), "application/geo+json")
+		overallLinks = stac.AddLink(overallLinks, baseURL, "self", fmt.Sprintf("/collections/%s/items", collectionID), "application/geo+json")
 	}
 
 	if featureCollection.Next != "" {
 		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Next))
 		query := strings.Join(queryPartsFull, "&")
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "next", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
+		overallLinks = stac.AddLink(overallLinks, baseURL, "next", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
 
 	if featureCollection.Prev != "" {
 		queryPartsFull = append(queryParts, fmt.Sprintf("token=%s", featureCollection.Prev))
 		query := strings.Join(queryPartsFull, "&")
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "previous", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
+		overallLinks = stac.AddLink(overallLinks, baseURL, "previous", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
 
 	return c.JSON(struct {
@@ -558,16 +576,16 @@ func Items(c *fiber.Ctx) error {
 
 func itemFromIDs(c *fiber.Ctx, ids []string) error {
 	ctx := context.Background()
-	baseUrl := getBaseUrl(c)
-	collectionId := c.Params("collectionId")
+	baseURL := getBaseURL(c)
+	collectionID := c.Params("collectionId")
 
 	pool := database.GetInstance(ctx)
 
 	// make sure the requested collection exists
-	row := pool.QueryRow(ctx, "SELECT id FROM pgstac.collections WHERE id=$1", collectionId)
+	row := pool.QueryRow(ctx, "SELECT id FROM pgstac.collections WHERE id=$1", collectionID)
 	var dbResult string
 	if err := row.Scan(&dbResult); err != nil {
-		log.Error().Err(err).Str("collectionId", collectionId).Msg("collection does not exist in database")
+		log.Error().Err(err).Str("collectionId", collectionID).Msg("collection does not exist in database")
 		c.Status(fiber.ErrNotFound.Code)
 		return c.JSON(stac.Message{
 			Code:        stac.NotFoundError,
@@ -578,7 +596,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 	// do the search
 	conf := json.RawMessage(`{"nohydrate": false}`)
 	cql := stac.CQL{
-		Collections: []string{collectionId},
+		Collections: []string{collectionID},
 		Ids:         ids,
 		Limit:       10,
 		Conf:        &conf,
@@ -596,11 +614,11 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 
 	// enrich links
 	for _, item := range featureCollection.Features {
-		var myLinksJson json.RawMessage
-		var itemId string
+		var myLinksJSON json.RawMessage
+		var itemID string
 		var links []stac.Link
 
-		if err := json.Unmarshal(*item["id"], &itemId); err != nil {
+		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
 			c.Status(fiber.ErrInternalServerError.Code)
 			return c.JSON(stac.Message{
@@ -619,16 +637,16 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 		}
 		for idx, link := range links {
 			if link.Rel == "collection" {
-				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseUrl, collectionId)
+				link.Href = fmt.Sprintf("%s/api/stac/v1/collections/%s", baseURL, collectionID)
 			}
 			links[idx] = link
 		}
 
-		links = stac.AddLink(links, baseUrl, "parent", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-		links = stac.AddLink(links, baseUrl, "root", "/", "application/json")
-		links = stac.AddLink(links, baseUrl, "self", fmt.Sprintf("/collections/%s/items/%s", collectionId, itemId), "application/geo+json")
+		links = stac.AddLink(links, baseURL, "parent", fmt.Sprintf("/collections/%s", collectionID), "application/json")
+		links = stac.AddLink(links, baseURL, "root", "/", "application/json")
+		links = stac.AddLink(links, baseURL, "self", fmt.Sprintf("/collections/%s/items/%s", collectionID, itemID), "application/geo+json")
 
-		myLinksJson, err = json.Marshal(links)
+		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
 			c.Status(fiber.ErrInternalServerError.Code)
@@ -638,29 +656,29 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 			})
 		}
 
-		item["links"] = &myLinksJson
+		item["links"] = &myLinksJSON
 	}
 
 	// overall links
 	overallLinks := make([]stac.Link, 0, 4)
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "collection", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "parent", fmt.Sprintf("/collections/%s", collectionId), "application/json")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "root", "/", "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, stac.CollectionKey, fmt.Sprintf("/collections/%s", collectionID), "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "parent", fmt.Sprintf("/collections/%s", collectionID), "application/json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "root", "/", "application/json")
 
 	queryParts := []string{fmt.Sprintf("ids=%s", strings.Join(ids, ","))}
 	query := strings.Join(queryParts, "&")
-	overallLinks = stac.AddLink(overallLinks, baseUrl, "self", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
+	overallLinks = stac.AddLink(overallLinks, baseURL, "self", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 
 	if featureCollection.Next != "" {
 		queryPartsFull := append(queryParts, fmt.Sprintf("token=%s", featureCollection.Next))
 		query := strings.Join(queryPartsFull, "&")
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "next", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
+		overallLinks = stac.AddLink(overallLinks, baseURL, "next", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
 
 	if featureCollection.Prev != "" {
 		queryPartsFull := append(queryParts, fmt.Sprintf("token=%s", featureCollection.Prev))
 		query := strings.Join(queryPartsFull, "&")
-		overallLinks = stac.AddLink(overallLinks, baseUrl, "previous", fmt.Sprintf("/collections/%s/items?%s", collectionId, query), "application/geo+json")
+		overallLinks = stac.AddLink(overallLinks, baseURL, "previous", fmt.Sprintf("/collections/%s/items?%s", collectionID, query), "application/geo+json")
 	}
 
 	return c.JSON(struct {
@@ -676,56 +694,60 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 	})
 }
 
-func checkBodyIdAgainstURL(c *fiber.Ctx, collectionId string, itemId string, item map[string]*json.RawMessage) (map[string]*json.RawMessage, error) {
+func checkBodyIDAgainstURL(c *fiber.Ctx, collectionID string, itemID string, item map[string]*json.RawMessage) (map[string]*json.RawMessage, error) {
 	// check that itemId and collectionId are set and match those provided in the URL
-	if bodyItemId, ok := item["id"]; !ok {
-		var itemIdSerialized json.RawMessage
-		itemIdSerialized, err := json.Marshal(itemId)
+	if bodyItemID, ok := item["id"]; !ok {
+		var itemIDSerialized json.RawMessage
+		itemIDSerialized, err := json.Marshal(itemID)
 		if err != nil {
 			log.Error().Msg("body does not include item id")
 			c.Status(fiber.StatusBadRequest)
-			c.JSON(stac.Message{
+			if err2 := c.JSON(stac.Message{
 				Code:        "ModifyItemFailed",
 				Description: "item must include an `id` field with the item id",
-			})
+			}); err2 != nil {
+				return nil, err2
+			}
 			return nil, err
 		}
-		item["id"] = &itemIdSerialized
-	} else {
-		if string(*bodyItemId) != itemId {
-			log.Error().Str("BodyItemId", string(*bodyItemId)).Str("URLItemId", itemId).Msg("PUT body item id does not match URL item id")
-			c.Status(fiber.StatusBadRequest)
-			c.JSON(stac.Message{
-				Code:        "ModifyItemFailed",
-				Description: "item must include an `id` field with the item id that matches the URL item id",
-			})
-			return nil, errors.New("specified item id and url item id do not match")
+		item["id"] = &itemIDSerialized
+	} else if string(*bodyItemID) != itemID {
+		log.Error().Str("BodyItemId", string(*bodyItemID)).Str("URLItemId", itemID).Msg("PUT body item id does not match URL item id")
+		c.Status(fiber.StatusBadRequest)
+		if err2 := c.JSON(stac.Message{
+			Code:        "ModifyItemFailed",
+			Description: "item must include an `id` field with the item id that matches the URL item id",
+		}); err2 != nil {
+			return nil, err2
 		}
+		return nil, errors.New("specified item id and url item id do not match")
 	}
 
-	if bodyCollectionId, ok := item["collection"]; !ok {
+	if bodyCollectionID, ok := item["collection"]; !ok {
 		var collectionSerialized json.RawMessage
-		collectionSerialized, err := json.Marshal(collectionId)
+		collectionSerialized, err := json.Marshal(collectionID)
 		if err != nil {
 			log.Error().Err(err).Msg("could not serialize collection id")
 			c.Status(fiber.StatusInternalServerError)
-			c.JSON(stac.Message{
+			if err2 := c.JSON(stac.Message{
 				Code:        "ModifyItemFailed",
 				Description: fmt.Sprintf("serialize collection id failed: %s", err.Error()),
-			})
+			}); err2 != nil {
+				return nil, err2
+			}
 			return nil, err
 		}
-		item["collection"] = &collectionSerialized
-	} else {
-		if string(*bodyCollectionId) != collectionId {
-			log.Error().Str("BodyCollectionId", string(*bodyCollectionId)).Str("URLCollectionId", itemId).Msg("PUT body collection id does not match URL collection id")
-			c.Status(fiber.StatusBadRequest)
-			c.JSON(stac.Message{
-				Code:        "ModifyItemFailed",
-				Description: "item must include a `collection` field with the coillection id that matches the URL collection id",
-			})
-			return nil, errors.New("specified collection id and url collection id do not match")
+		item[stac.CollectionKey] = &collectionSerialized
+	} else if string(*bodyCollectionID) != collectionID {
+		log.Error().Str("BodyCollectionId", string(*bodyCollectionID)).Str("URLCollectionId", itemID).Msg("PUT body collection id does not match URL collection id")
+		c.Status(fiber.StatusBadRequest)
+		if err2 := c.JSON(stac.Message{
+			Code:        "ModifyItemFailed",
+			Description: "item must include a `collection` field with the coillection id that matches the URL collection id",
+		}); err2 != nil {
+			return nil, err2
 		}
+		return nil, errors.New("specified collection id and url collection id do not match")
 	}
 
 	return item, nil
