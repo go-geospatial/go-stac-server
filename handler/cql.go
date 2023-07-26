@@ -48,13 +48,24 @@ func buildQueryArray(c *fiber.Ctx) []string {
 
 func getCQLFromBody(c *fiber.Ctx) (stac.CQL, error) {
 	var cql stac.CQL
+	fmt.Println(string(c.Body()))
 	if err := json.Unmarshal(c.Body(), &cql); err != nil {
 		log.Error().Err(err).Msg("could not parse search body")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusBadRequest)
 		return stac.CQL{}, c.JSON(stac.Message{
-			Code:        stac.ServerError,
+			Code:        stac.ParameterError,
 			Description: "could not parse search body",
 		})
+	}
+
+	if len(cql.Bbox) != 0 && cql.Intersects != nil {
+		log.Error().Msg("cannot specify both bbox and intersects")
+		c.Status(fiber.StatusBadRequest)
+		c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "cannot specify both bbox and intersects",
+		})
+		return stac.CQL{}, errors.New("cannot specify both bbox and intersects")
 	}
 
 	// update default value for limit
@@ -62,7 +73,14 @@ func getCQLFromBody(c *fiber.Ctx) (stac.CQL, error) {
 		cql.Limit = 10
 	}
 
-	if err := validateLimit(c, cql.Limit); err != nil {
+	if limit, err := validateLimit(c, cql.Limit); err == nil {
+		cql.Limit = limit
+	} else {
+		return stac.CQL{}, err
+	}
+
+	// validate bbox
+	if _, err := validateBbox(c, cql.Bbox); err != nil {
 		return stac.CQL{}, err
 	}
 
@@ -84,6 +102,16 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	sortByStr := c.Query("sortby", "")
 	fieldStr := c.Query("fields", "")
 	token := c.Query("token", "")
+
+	if bboxStr != "" && intersectsStr != "" {
+		log.Error().Msg("cannot specify both bbox and intersects")
+		c.Status(fiber.StatusBadRequest)
+		c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "cannot specify both bbox and intersects",
+		})
+		return stac.CQL{}, errors.New("cannot specify both bbox and intersects")
+	}
 
 	// parse collections
 	collections := parseCollections(collectionsStr)
@@ -204,12 +232,10 @@ func parseSort(c *fiber.Ctx, sortByStr string) ([]stac.CQLSort, error) {
 				err := errors.New("sort field does not match regex")
 				log.Error().Err(err).Msg("sort field does not match regex")
 				c.Status(fiber.ErrInternalServerError.Code)
-				if err2 := c.JSON(stac.Message{
+				_ = c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "sort expression must be of the form ([+-]?)(.*)",
-				}); err2 != nil {
-					return sort, err2
-				}
+				})
 				return sort, err
 			}
 		}
@@ -238,12 +264,10 @@ func parseFields(c *fiber.Ctx, fieldStr string) (stac.CQLFields, error) {
 				err := errors.New("sort field does not match regex")
 				log.Error().Err(err).Msg("sort field does not match regex")
 				c.Status(fiber.ErrInternalServerError.Code)
-				if err2 := c.JSON(stac.Message{
+				_ = c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "fields must be of the form ([-]?)(.*)",
-				}); err2 != nil {
-					return fields, err2
-				}
+				})
 				return fields, err
 			}
 		}
@@ -257,36 +281,32 @@ func parseLimit(c *fiber.Ctx, limitStr string) (int, error) {
 	if err != nil {
 		log.Error().Err(err).Str("limit", limitStr).Msg("could not convert limit to int")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		if err2 := c.JSON(stac.Message{
+		_ = c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: fmt.Sprintf("limit '%s' could not be converted to int", limitStr),
-		}); err2 != nil {
-			return 0, err2
-		}
+		})
 		return 0, err
 	}
 
-	if err := validateLimit(c, limit); err != nil {
-		return 0, err
-	}
-
-	return limit, nil
+	return validateLimit(c, limit)
 }
 
-func validateLimit(c *fiber.Ctx, limit int) error {
-	if limit < 0 || limit > 10000 {
-		err := errors.New("limit out of bounds")
-		log.Error().Err(err).Int("limit", limit).Msg("limit out of bounds: 1 <= limit <= 10,000")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
-		if err2 := c.JSON(stac.Message{
-			Code:        stac.ParameterError,
-			Description: fmt.Sprintf("limit '%d' must be between 1 and 10,000", limit),
-		}); err2 != nil {
-			return err2
-		}
-		return err
+func validateLimit(c *fiber.Ctx, limit int) (int, error) {
+	if limit > 10_000 {
+		log.Warn().Int("limit", limit).Msg("limit out of bounds: limit > 10,000")
+		return 10_000, nil
 	}
-	return nil
+	if limit < 0 {
+		err := errors.New("limit out of bounds")
+		log.Warn().Int("limit", limit).Msg("limit out of bounds: limit < 0")
+		c.Status(fiber.StatusBadRequest)
+		_ = c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: fmt.Sprintf("limit '%d' must be greater than 0", limit),
+		})
+		return 0, err
+	}
+	return limit, nil
 }
 
 func parseRFC3339Date(c *fiber.Ctx, dateStr string) error {
@@ -297,26 +317,29 @@ func parseRFC3339Date(c *fiber.Ctx, dateStr string) error {
 			if first == ".." && second == ".." {
 				// both parts of the interval cannot be open
 				c.Status(fiber.ErrUnprocessableEntity.Code)
-				return c.JSON(stac.Message{
+				_ = c.JSON(stac.Message{
 					Code:        stac.ParameterError,
 					Description: fmt.Sprintf("both sides of the interval cannot be open: %s", dateStr),
 				})
+				return errors.New("both parts of the interval cannot be open")
 			}
 
 			if matched := re.MatchString(first); !matched {
 				c.Status(fiber.ErrUnprocessableEntity.Code)
-				return c.JSON(stac.Message{
+				_ = c.JSON(stac.Message{
 					Code:        stac.ParameterError,
-					Description: fmt.Sprintf("first datetime '%s' is not RFC 3339 formated or open", first),
+					Description: fmt.Sprintf("first datetime '%s' is not RFC 3339 formatted or open", first),
 				})
+				return errors.New("datetime is not RFC 3339 formatted")
 			}
 
 			if matched := re.MatchString(second); !matched {
 				c.Status(fiber.ErrUnprocessableEntity.Code)
-				return c.JSON(stac.Message{
+				c.JSON(stac.Message{
 					Code:        stac.ParameterError,
 					Description: fmt.Sprintf("second datetime '%s' is not RFC 3339 formated or open", second),
 				})
+				return errors.New("datetime is not RFC 3339 formatted")
 			}
 
 		} else {
@@ -324,16 +347,18 @@ func parseRFC3339Date(c *fiber.Ctx, dateStr string) error {
 			if matched, err := regexp.MatchString(`(\d{4})-(0[1-9]|1[0-2])-([01][\d]|3[01])[\sT]([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(Z|[\+-](0[\d]|1[\d]|2[0-3]):([0-5]\d))?`, first); err != nil {
 				log.Error().Err(err).Msg("could not validate date str due to regex error")
 				c.Status(fiber.ErrInternalServerError.Code)
-				return c.JSON(stac.Message{
+				_ = c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "regex error while validating datetime",
 				})
+				return err
 			} else if !matched {
 				c.Status(fiber.ErrUnprocessableEntity.Code)
-				return c.JSON(stac.Message{
+				_ = c.JSON(stac.Message{
 					Code:        stac.ParameterError,
 					Description: fmt.Sprintf("datetime '%s' is not RFC 3339 formated", dateStr),
 				})
+				return errors.New("datetime is not RFC 3339")
 			}
 		}
 	}
@@ -350,25 +375,52 @@ func parseBboxQuery(c *fiber.Ctx, bboxStr string) ([]float64, error) {
 			var coord float64
 			if coord, err = strconv.ParseFloat(bboxCoord, 64); err != nil {
 				log.Error().Err(err).Str("Coord", bboxCoord).Msg("could not convert bbox coordinate to float64")
-				c.Status(fiber.ErrUnprocessableEntity.Code)
-				return nil, c.JSON(stac.Message{
+				c.Status(fiber.StatusBadRequest)
+				_ = c.JSON(stac.Message{
 					Code:        stac.ParameterError,
 					Description: fmt.Sprintf("could not parse bbox: '%s'; offending coordinate '%s'. bbox must be 4 or 6 float64 coordinates separated by commas. The coordinate order is: lower left axis-1, lower left axis-2, minimum axis-3 (optional), upper right axis-1, upper right axis-2, maximum axis-3 (optional)", bboxStr, bboxCoord),
 				})
+				return nil, err
 			}
-
 			bbox = append(bbox, coord)
 		}
+	}
 
-		if len(bbox) != 4 || len(bbox) != 6 {
-			err := errors.New("bbox must be length 4 or 6")
-			log.Error().Err(err).Str("bbox", bboxStr).Msg("bbox parse error")
-			c.Status(fiber.ErrUnprocessableEntity.Code)
-			return nil, c.JSON(stac.Message{
-				Code:        stac.ParameterError,
-				Description: fmt.Sprintf("could not parse bbox: '%s'; bbox must be 4 or 6 float64 coordinates separated by commas. The coordinate order is: lower left axis-1, lower left axis-2, minimum axis-3 (optional), upper right axis-1, upper right axis-2, maximum axis-3 (optional)", bboxStr),
-			})
-		}
+	return validateBbox(c, bbox)
+}
+
+func validateBbox(c *fiber.Ctx, bbox []float64) ([]float64, error) {
+	if len(bbox) != 0 || len(bbox) != 4 || len(bbox) != 6 {
+		err := errors.New("bbox must be length 4 or 6")
+		log.Error().Err(err).Floats64("bbox", bbox).Msg("bbox ivalid length. must be 4 or 6.")
+		c.Status(fiber.StatusBadRequest)
+		_ = c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "bbox of invalid length",
+		})
+		return nil, err
+	}
+
+	if len(bbox) == 4 && bbox[1] > bbox[3] {
+		err := errors.New("bbox lat1 > lat2")
+		log.Error().Err(err).Floats64("bbox", bbox).Msg("lat1 > lat2")
+		c.Status(fiber.StatusBadRequest)
+		_ = c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "bbox invalid lat1 > lat2",
+		})
+		return nil, err
+	}
+
+	if len(bbox) == 6 && bbox[1] > bbox[4] {
+		err := errors.New("bbox lat1 > lat2")
+		log.Error().Err(err).Floats64("bbox", bbox).Msg("lat1 > lat2")
+		c.Status(fiber.StatusBadRequest)
+		_ = c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "bbox invalid lat1 > lat2",
+		})
+		return nil, err
 	}
 
 	return bbox, nil
@@ -380,10 +432,11 @@ func parseIntersects(c *fiber.Ctx, intersectsStr string) (*stac.GeoJSON, error) 
 		if err := json.Unmarshal([]byte(intersectsStr), &intersects); err != nil {
 			log.Error().Err(err).Str("intersects", intersectsStr).Msg("error parsing GeoJson intersects query")
 			c.Status(fiber.ErrUnprocessableEntity.Code)
-			return nil, c.JSON(stac.Message{
+			_ = c.JSON(stac.Message{
 				Code:        stac.ParameterError,
 				Description: "could not parse intersects query",
 			})
+			return nil, err
 		}
 	}
 	return &intersects, nil
@@ -404,10 +457,11 @@ func parseCQL2Filter(c *fiber.Ctx, filterStr string, filterLang string) (*json.R
 		err := errors.New("filter-lang must be one of 'cql2-text' or 'cql2-json'")
 		log.Error().Err(err).Str("filter-lang", filterLang).Msg("invalid filter-lang provided")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		return nil, "cql-json", c.JSON(stac.Message{
+		_ = c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "invalid filter-lang provided",
 		})
+		return nil, "cql-json", err
 	}
 
 	return &jsonRaw, "cql2-json", nil

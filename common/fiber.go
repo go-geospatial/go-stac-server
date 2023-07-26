@@ -13,34 +13,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package static
+package common
 
 import (
-	"embed"
-	"net/http"
-
+	json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/filesystem"
-	"github.com/rs/zerolog/log"
 )
 
-//go:embed files/openapi.json
-var openAPI string
-
-//go:embed files/*
-var f embed.FS
-
-func OpenAPIHandler(c *fiber.Ctx) error {
-	c.Set("Content-Type", "application/vnd.oai.openapi+json;version=3.1")
-	return c.SendString(openAPI)
-}
-
-func InitStaticFiles(app *fiber.App) {
-	log.Info().Msg("seting up filesystem")
-
-	app.Use("/", filesystem.New(filesystem.Config{
-		Root:       http.FS(f),
-		PathPrefix: "files",
-		Browse:     true,
-	}))
+// JSON converts any interface or string to JSON.
+// Array and slice values encode as JSON arrays,
+// except that []byte encodes as a base64-encoded string,
+// and a nil slice encodes as the null JSON value.
+// This method also sets the content header to application/json.
+func GeoJSON(c *fiber.Ctx, data interface{}) error {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	c.Set("Content-Type", "application/geo+json")
+	return c.Send(raw)
 }

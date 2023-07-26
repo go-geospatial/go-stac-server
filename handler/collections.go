@@ -133,11 +133,12 @@ func collectionFromID(c *fiber.Ctx, collectionID string) error {
 			})
 		}
 
-		log.Error().Err(err).Msg("could not scan collection id and title")
-		c.Status(fiber.ErrInternalServerError.Code)
+		// pgstac returns a row even if the collection doesn't exist.
+		log.Error().Str("collection", collectionID).Msg("collection not found")
+		c.Status(fiber.StatusNotFound)
 		return c.JSON(stac.Message{
-			Code:        database.QueryErrorCode,
-			Description: "could not serialize data from collections table",
+			Code:        stac.NotFoundError,
+			Description: fmt.Sprintf("collection '%s' not found", collectionID),
 		})
 	}
 
@@ -145,12 +146,10 @@ func collectionFromID(c *fiber.Ctx, collectionID string) error {
 	if err := json.Unmarshal([]byte(rawCollection), &collection); err != nil {
 		log.Error().Err(err).Msg("collection JSON unmarshal failed")
 		c.Status(fiber.ErrInternalServerError.Code)
-		if err2 := c.JSON(stac.Message{
+		_ = c.JSON(stac.Message{
 			Code:        stac.JSONParsingError,
 			Description: "unable to un-marshal collection object JSON",
-		}); err2 != nil {
-			return err2
-		}
+		})
 		return err
 	}
 
@@ -160,12 +159,10 @@ func collectionFromID(c *fiber.Ctx, collectionID string) error {
 		if err := json.Unmarshal(*rawLinks, &links); err != nil {
 			log.Error().Err(err).Msg("collection JSON unmarshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			if err2 := c.JSON(stac.Message{
+			_ = c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to un-marshal collection links JSON",
-			}); err2 != nil {
-				return err2
-			}
+			})
 			return err
 		}
 	}
@@ -182,15 +179,16 @@ func collectionFromID(c *fiber.Ctx, collectionID string) error {
 	if err != nil {
 		log.Error().Err(err).Msg("collection links JSON marshal failed")
 		c.Status(fiber.ErrInternalServerError.Code)
-		if err2 := c.JSON(stac.Message{
+		_ = c.JSON(stac.Message{
 			Code:        stac.JSONParsingError,
 			Description: "unable to marshal collection links to JSON",
-		}); err2 != nil {
-			return err2
-		}
+		})
 		return err
 	}
 	collection["links"] = &serializedLinks
+
+	collectionType := json.RawMessage(`"Collection"`)
+	collection["type"] = &collectionType
 
 	return c.JSON(collection)
 }
@@ -233,12 +231,10 @@ func Collections(c *fiber.Ctx) error {
 		if err := json.Unmarshal([]byte(rawCollection), &collection); err != nil {
 			log.Error().Err(err).Msg("collection JSON unmarshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			if err2 := c.JSON(stac.Message{
+			_ = c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to un-marshal collection object JSON",
-			}); err2 != nil {
-				return err2
-			}
+			})
 			return err
 		}
 
@@ -248,12 +244,10 @@ func Collections(c *fiber.Ctx) error {
 			if err := json.Unmarshal(*rawLinks, &links); err != nil {
 				log.Error().Err(err).Msg("collection JSON unmarshal failed")
 				c.Status(fiber.ErrInternalServerError.Code)
-				if err2 := c.JSON(stac.Message{
+				_ = c.JSON(stac.Message{
 					Code:        stac.JSONParsingError,
 					Description: "unable to un-marshal collection links JSON",
-				}); err2 != nil {
-					return err2
-				}
+				})
 				return err
 			}
 		}
@@ -270,27 +264,26 @@ func Collections(c *fiber.Ctx) error {
 		if err != nil {
 			log.Error().Err(err).Msg("collection links JSON marshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			if err2 := c.JSON(stac.Message{
+			_ = c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to marshal collection links to JSON",
-			}); err2 != nil {
-				return err2
-			}
+			})
 			return err
 		}
 		collection["links"] = &serializedLinks
+
+		collectionType := json.RawMessage(`"Collection"`)
+		collection["type"] = &collectionType
 
 		var serializedCollection json.RawMessage
 		serializedCollection, err = json.Marshal(collection)
 		if err != nil {
 			log.Error().Err(err).Msg("collection JSON marshal failed")
 			c.Status(fiber.ErrInternalServerError.Code)
-			if err2 := c.JSON(stac.Message{
+			_ = c.JSON(stac.Message{
 				Code:        stac.JSONParsingError,
 				Description: "unable to marshal collection to JSON",
-			}); err2 != nil {
-				return err2
-			}
+			})
 			return err
 		}
 		collections = append(collections, &serializedCollection)

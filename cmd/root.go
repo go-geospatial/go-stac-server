@@ -189,6 +189,14 @@ func init() {
 		log.Panic().Err(err).Msg("could not bind log-otlp-url")
 	}
 
+	if err := viper.BindEnv("log.pretty", "LOG_PRETTY"); err != nil {
+		log.Panic().Err(err).Msg("could not bind LOG_PRETTY")
+	}
+	rootCmd.PersistentFlags().Bool("log-pretty", false, "Pretty print logs")
+	if err := viper.BindPFlag("log.pretty", rootCmd.PersistentFlags().Lookup("log-pretty")); err != nil {
+		log.Panic().Err(err).Msg("could not bind log-pretty")
+	}
+
 	// database
 	if err := viper.BindEnv("database.dsn", "DSN"); err != nil {
 		log.Panic().Err(err).Msg("could not bind DSN")

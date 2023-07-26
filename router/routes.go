@@ -17,6 +17,7 @@ package router
 
 import (
 	"github.com/go-geospatial/go-stac-server/handler"
+	"github.com/go-geospatial/go-stac-server/static"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -24,6 +25,8 @@ import (
 func SetupRoutes(app *fiber.App) {
 	// config.js - used to configure Stac Browser
 	app.Get("/config.js", handler.StacBrowserConfig)
+	// openapi.json
+	app.Get("/openapi.json", static.OpenAPIHandler)
 
 	// STAC API
 	api := app.Group("api")

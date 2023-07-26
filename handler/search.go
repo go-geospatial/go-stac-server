@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/go-geospatial/go-stac-server/common"
 	"github.com/go-geospatial/go-stac-server/stac"
 	json "github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
@@ -39,16 +40,20 @@ func Search(c *fiber.Ctx) error {
 		cql, err = getCQLFromQuery(c)
 		if err != nil {
 			// note http response and logging handled by getCQLFromQuery
-			return err
+			return nil
 		}
 	case "POST":
 		cql, err = getCQLFromBody(c)
 		if err != nil {
 			// note http response and logging handled by getCQLFromBody
-			return err
+			return nil
 		}
 	default:
-		log.Fatal().Str("Method", c.Method()).Msg("mis-configured routes - unsupported method")
+		c.Status(fiber.StatusBadRequest)
+		_ = c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "unsupported method",
+		})
 	}
 
 	if token != "" {
@@ -192,10 +197,14 @@ func Search(c *fiber.Ctx) error {
 			overallLinks = stac.AddLinkPost(overallLinks, baseURL, "previous", "/search", "application/geo+json", &jsonRaw)
 		}
 	default:
-		log.Fatal().Str("Method", c.Method()).Msg("mis-configured routes - unsupported method")
+		c.Status(fiber.StatusBadRequest)
+		_ = c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "unsupported method",
+		})
 	}
 
-	return c.JSON(struct {
+	return common.GeoJSON(c, struct {
 		Type     string                        `json:"type"`
 		Context  *json.RawMessage              `json:"context"`
 		Features []map[string]*json.RawMessage `json:"features"`

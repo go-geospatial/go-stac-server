@@ -44,24 +44,20 @@ func ValidateCollectionIDsMatch(c *fiber.Ctx, obj map[string]*json.RawMessage, e
 			err := errors.New("collection parameters do not match")
 			log.Error().Str("URL-parameter", expected).Str("JSON-parameter", specified).Msg("collection parameters do not match")
 			c.Status(fiber.ErrUnprocessableEntity.Code)
-			if err2 := c.JSON(Message{
+			_ = c.JSON(Message{
 				Code:        ParameterError,
 				Description: "collection path id does not match json collection id",
-			}); err2 != nil {
-				return err2
-			}
+			})
 			return err
 		}
 	} else {
 		err := errors.New("invalid items json - collections parameter missing")
 		log.Error().Msg("invalid items json - collections parameter missing")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		if err2 := c.JSON(Message{
+		_ = c.JSON(Message{
 			Code:        ParameterError,
 			Description: "invalid items json - collections parameter missing",
-		}); err2 != nil {
-			return err2
-		}
+		})
 		return err
 	}
 
@@ -76,24 +72,20 @@ func ValidateID(c *fiber.Ctx, obj map[string]*json.RawMessage) (string, error) {
 		if err := json.Unmarshal(*idRaw, &id); err != nil {
 			log.Error().Err(err).Str("id", string(*idRaw)).Msg("cannot parse id string")
 			c.Status(fiber.ErrUnprocessableEntity.Code)
-			if err2 := c.JSON(Message{
+			_ = c.JSON(Message{
 				Code:        ParameterError,
 				Description: `cannot parse id string must conform to format: '^([a-zA-Z0-9\-_\.]+)$'`,
-			}); err2 != nil {
-				return "", err2
-			}
+			})
 			return "", err
 		}
 	} else {
 		err := errors.New("id field is missing from create collection")
 		log.Error().Msg("id field is missing from create collection")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		if err2 := c.JSON(Message{
+		_ = c.JSON(Message{
 			Code:        ParameterError,
 			Description: `id field is required`,
-		}); err2 != nil {
-			return "", err2
-		}
+		})
 		return "", err
 	}
 
@@ -101,12 +93,10 @@ func ValidateID(c *fiber.Ctx, obj map[string]*json.RawMessage) (string, error) {
 		err := errors.New("id field contains invalid characters")
 		log.Error().Msg("id field contains invalid characters")
 		c.Status(fiber.ErrUnprocessableEntity.Code)
-		if err2 := c.JSON(Message{
+		_ = c.JSON(Message{
 			Code:        ParameterError,
 			Description: `id must conform to format '^([a-zA-Z0-9\-_\.]+)$'`,
-		}); err2 != nil {
-			return "", err2
-		}
+		})
 		return "", err
 	}
 

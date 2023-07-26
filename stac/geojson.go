@@ -15,7 +15,9 @@
 
 package stac
 
+import json "github.com/goccy/go-json"
+
 type GeoJSON struct {
-	Type        string    `json:"type"`
-	Coordinates []float64 `json:"coordinates"`
+	Type        string           `json:"type"`
+	Coordinates *json.RawMessage `json:"coordinates"`
 }
