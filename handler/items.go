@@ -182,7 +182,7 @@ func CreateItems(c *fiber.Ctx) error {
 
 	if err := json.Unmarshal(itemsRaw, &items); err != nil {
 		log.Error().Err(err).Str("RequestBody", string(itemsRaw)).Msg("cannot unmarshal body to items")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "JSON parse failed; items must be a valid JSON object",
@@ -194,14 +194,23 @@ func CreateItems(c *fiber.Ctx) error {
 	var ok bool
 	if geojsonType, ok = items["type"]; !ok {
 		log.Error().Str("RequestBody", string(itemsRaw)).Msg("items missing type field - must be a valid geojson object")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "items missing type field - must be a valid geojson object",
 		})
 	}
 
-	geojsonTypeStr := string(*geojsonType)
+	var geojsonTypeStr string
+	if err := json.Unmarshal(*geojsonType, &geojsonTypeStr); err != nil {
+		log.Error().Str("RequestBody", string(itemsRaw)).Msg("cannot unmarshal geojson type")
+		c.Status(fiber.StatusBadRequest)
+		return c.JSON(stac.Message{
+			Code:        stac.ParameterError,
+			Description: "items must contain a type field that is a string",
+		})
+	}
+
 	switch geojsonTypeStr {
 	case "Feature":
 		return createFeature(c, items, itemsRaw)
@@ -209,7 +218,7 @@ func CreateItems(c *fiber.Ctx) error {
 		return createFeatureCollection(c, items, itemsRaw)
 	default:
 		log.Error().Str("type", geojsonTypeStr).Msg("invalid geojson type")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "invalid geojson type - must be one of 'Feature' or 'FeatureCollection'",
@@ -265,7 +274,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	var ok bool
 	if featuresRaw, ok = items["features"]; !ok {
 		log.Error().Str("raw", string(itemsRaw)).Msg("failed to get features - object invalid")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "objects of type 'FeatureCollection' must have a 'features' field",
@@ -275,7 +284,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	var features []map[string]*json.RawMessage
 	if err := json.Unmarshal(*featuresRaw, &features); err != nil {
 		log.Error().Err(err).Str("raw", string(itemsRaw)).Msg("unmarshal geojson features failed")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "objects of type 'FeatureCollection' must have a valid 'features' field",

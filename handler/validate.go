@@ -280,7 +280,7 @@ func parseLimit(c *fiber.Ctx, limitStr string) (int, error) {
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
 		log.Error().Err(err).Str("limit", limitStr).Msg("could not convert limit to int")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		_ = c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: fmt.Sprintf("limit '%s' could not be converted to int", limitStr),
@@ -311,55 +311,25 @@ func validateLimit(c *fiber.Ctx, limit int) (int, error) {
 
 func parseRFC3339Date(c *fiber.Ctx, dateStr string) error {
 	if dateStr != "" {
-		if first, second, found := strings.Cut(dateStr, "/"); found {
-			// interval specified
-			re := regexp.MustCompile(`(\d{4})-(0[1-9]|1[0-2])-([01][\d]|3[01])[\sT]([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(Z|[\+-](0[\d]|1[\d]|2[0-3]):([0-5]\d))?|\.\.`)
-			if first == ".." && second == ".." {
-				// both parts of the interval cannot be open
-				c.Status(fiber.ErrUnprocessableEntity.Code)
-				_ = c.JSON(stac.Message{
-					Code:        stac.ParameterError,
-					Description: fmt.Sprintf("both sides of the interval cannot be open: %s", dateStr),
-				})
-				return errors.New("both parts of the interval cannot be open")
-			}
+		dateStr = strings.ToUpper(dateStr)
+		if dateStr == "/" || dateStr == "../.." || dateStr == "/.." || dateStr == "../" {
+			// both parts of the interval cannot be open
+			c.Status(fiber.StatusBadRequest)
+			_ = c.JSON(stac.Message{
+				Code:        stac.ParameterError,
+				Description: fmt.Sprintf("both sides of the interval cannot be open: %s", dateStr),
+			})
+			return errors.New("both parts of the interval cannot be open")
+		}
 
-			if matched := re.MatchString(first); !matched {
-				c.Status(fiber.ErrUnprocessableEntity.Code)
-				_ = c.JSON(stac.Message{
-					Code:        stac.ParameterError,
-					Description: fmt.Sprintf("first datetime '%s' is not RFC 3339 formatted or open", first),
-				})
-				return errors.New("datetime is not RFC 3339 formatted")
-			}
-
-			if matched := re.MatchString(second); !matched {
-				c.Status(fiber.ErrUnprocessableEntity.Code)
-				c.JSON(stac.Message{
-					Code:        stac.ParameterError,
-					Description: fmt.Sprintf("second datetime '%s' is not RFC 3339 formated or open", second),
-				})
-				return errors.New("datetime is not RFC 3339 formatted")
-			}
-
-		} else {
-			// single date specified
-			if matched, err := regexp.MatchString(`(\d{4})-(0[1-9]|1[0-2])-([01][\d]|3[01])[\sT]([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(Z|[\+-](0[\d]|1[\d]|2[0-3]):([0-5]\d))?`, first); err != nil {
-				log.Error().Err(err).Msg("could not validate date str due to regex error")
-				c.Status(fiber.ErrInternalServerError.Code)
-				_ = c.JSON(stac.Message{
-					Code:        stac.ServerError,
-					Description: "regex error while validating datetime",
-				})
-				return err
-			} else if !matched {
-				c.Status(fiber.ErrUnprocessableEntity.Code)
-				_ = c.JSON(stac.Message{
-					Code:        stac.ParameterError,
-					Description: fmt.Sprintf("datetime '%s' is not RFC 3339 formated", dateStr),
-				})
-				return errors.New("datetime is not RFC 3339")
-			}
+		re := regexp.MustCompile(`^((\d{4})-(0[1-9]|1[0-2])-([012][\d]|3[01])[\sT]([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d+)?(Z|[\+-](0[\d]|1[\d]|2[0-3]):([0-5]\d))|\.\.)?/?((\d{4})-(0[1-9]|1[0-2])-([012][\d]|3[01])[\sT]([01]\d|2[0-3]):([0-5]\d):([0-5]\d)(\.\d+)?(Z|[\+-](0[\d]|1[\d]|2[0-3]):([0-5]\d))|\.\.)?$`)
+		if matched := re.MatchString(dateStr); !matched {
+			c.Status(fiber.StatusBadRequest)
+			_ = c.JSON(stac.Message{
+				Code:        stac.ParameterError,
+				Description: fmt.Sprintf("datetime '%s' must be of the form (RFC3339|..)/?(RFC3339|..)", dateStr),
+			})
+			return errors.New("datetime is not RFC 3339 formatted")
 		}
 	}
 
@@ -390,9 +360,9 @@ func parseBboxQuery(c *fiber.Ctx, bboxStr string) ([]float64, error) {
 }
 
 func validateBbox(c *fiber.Ctx, bbox []float64) ([]float64, error) {
-	if len(bbox) != 0 || len(bbox) != 4 || len(bbox) != 6 {
+	if len(bbox) != 0 && len(bbox) != 4 && len(bbox) != 6 {
 		err := errors.New("bbox must be length 4 or 6")
-		log.Error().Err(err).Floats64("bbox", bbox).Msg("bbox ivalid length. must be 4 or 6.")
+		log.Error().Err(err).Floats64("bbox", bbox).Int("len", len(bbox)).Msg("bbox invalid length. must be 4 or 6.")
 		c.Status(fiber.StatusBadRequest)
 		_ = c.JSON(stac.Message{
 			Code:        stac.ParameterError,
@@ -431,7 +401,7 @@ func parseIntersects(c *fiber.Ctx, intersectsStr string) (*stac.GeoJSON, error) 
 	if intersectsStr != "" {
 		if err := json.Unmarshal([]byte(intersectsStr), &intersects); err != nil {
 			log.Error().Err(err).Str("intersects", intersectsStr).Msg("error parsing GeoJson intersects query")
-			c.Status(fiber.ErrUnprocessableEntity.Code)
+			c.Status(fiber.StatusBadRequest)
 			_ = c.JSON(stac.Message{
 				Code:        stac.ParameterError,
 				Description: "could not parse intersects query",
@@ -456,7 +426,7 @@ func parseCQL2Filter(c *fiber.Ctx, filterStr string, filterLang string) (*json.R
 	default:
 		err := errors.New("filter-lang must be one of 'cql2-text' or 'cql2-json'")
 		log.Error().Err(err).Str("filter-lang", filterLang).Msg("invalid filter-lang provided")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		_ = c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "invalid filter-lang provided",

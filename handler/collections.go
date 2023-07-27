@@ -40,7 +40,7 @@ func ModifyCollection(c *fiber.Ctx) error {
 
 	if err := json.Unmarshal(collectionRaw, &collection); err != nil {
 		log.Error().Err(err).Str("RequestBody", string(collectionRaw)).Msg("cannot unmarshal provided JSON in CreateCollection")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "JSON parse failed; collection must be a valid JSON object",
@@ -72,7 +72,7 @@ func ModifyCollection(c *fiber.Ctx) error {
 	pool := database.GetInstance(ctx)
 	if _, err := pool.Exec(ctx, query, collectionJSON); err != nil {
 		log.Error().Err(err).Str("id", id).Str("raw", string(collectionRaw)).Msg("failed to create collection")
-		c.Status(fiber.ErrUnprocessableEntity.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
 			Code:        "CreateCollectionFailed",
 			Description: "failed to create collection",

@@ -29,7 +29,6 @@ import (
 	"github.com/go-geospatial/go-stac-server/router"
 	"github.com/go-geospatial/go-stac-server/static"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cache"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/rs/zerolog/log"
@@ -87,15 +86,6 @@ var rootCmd = &cobra.Command{
 			AllowMethods: "GET,POST,HEAD,PUT,DELETE,PATCH",
 		}
 		app.Use(cors.New(corsConfig))
-
-		// configure caching
-		app.Use(cache.New(cache.Config{
-			Next: func(c *fiber.Ctx) bool {
-				return c.Query("refresh") == "true"
-			},
-			Expiration:   30 * time.Minute,
-			CacheControl: true,
-		}))
 
 		// compression
 		app.Use(compress.New(compress.Config{
