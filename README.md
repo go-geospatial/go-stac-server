@@ -36,12 +36,12 @@ STAC server:
 ```bash
 pip install stac-api-validator
 stac-api-validator \
-    --root-url https://localhost:3000/api/stac/v1/ \
+    --root-url http://localhost:3000/api/stac/v1/ \
     --conformance core \
     --conformance item-search \
     --conformance features \
     --collection noaa-emergency-response \
-    --geometry '{"type": "Polygon", "coordinates": [[[-86.9251, 36.2001], [-86.9251, 36.1749], [-86.8999, 36.1749], [-86.8999, 36.2001], [-86.9251, 36.2001]]]}'
+    --geometry '{"type": "Polygon", "coordinates": [[[100.0, 0.0], [101.0, 0.0], [101.0, 1.0], [100.0, 1.0], [100.0, 0.0]]]}'
 ```
 
 # Configuration
