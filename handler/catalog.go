@@ -85,7 +85,7 @@ func Catalog(c *fiber.Ctx) error {
 	rows, err := pool.Query(ctx, "SELECT id, content->>'title'::text as title FROM pgstac.collections ORDER BY id")
 	if err != nil {
 		log.Error().Err(err).Msg("error querying collections for catalog response")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusInternalServerError)
 		return c.JSON(stac.Message{
 			Code:        database.QueryErrorCode,
 			Description: "could not query collections table",
@@ -101,7 +101,7 @@ func Catalog(c *fiber.Ctx) error {
 		err := rows.Scan(&collectionID, &child.Title)
 		if err != nil {
 			log.Error().Err(err).Msg("could not scan collection id and title")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        database.QueryErrorCode,
 				Description: "could not serialize data from collections table",

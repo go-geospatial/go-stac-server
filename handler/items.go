@@ -245,7 +245,7 @@ func createFeature(c *fiber.Ctx, items map[string]*json.RawMessage, itemsRaw []b
 	itemsJSON, err := json.Marshal(items)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal items to JSON")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusInternalServerError)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "failed to marshal JSON for items",
@@ -309,7 +309,7 @@ func createFeatureCollection(c *fiber.Ctx, items map[string]*json.RawMessage, it
 	itemsJSON, err := json.Marshal(items)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to marshal items to JSON")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusInternalServerError)
 		return c.JSON(stac.Message{
 			Code:        stac.ParameterError,
 			Description: "failed to marshal JSON for items",
@@ -395,7 +395,7 @@ func itemFromID(c *fiber.Ctx, collectionID string, itemID string) error {
 
 		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item id",
@@ -404,7 +404,7 @@ func itemFromID(c *fiber.Ctx, collectionID string, itemID string) error {
 
 		if err := json.Unmarshal(*item["links"], &links); err != nil {
 			log.Error().Err(err).Msg("error de-serializing link")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item link",
@@ -424,7 +424,7 @@ func itemFromID(c *fiber.Ctx, collectionID string, itemID string) error {
 		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing item links",
@@ -469,7 +469,7 @@ func Items(c *fiber.Ctx) error {
 	featureCollection, err := stac.Search(cql)
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusInternalServerError)
 		return c.JSON(stac.Message{
 			Code:        stac.ServerError,
 			Description: "stac search returned an error",
@@ -484,7 +484,7 @@ func Items(c *fiber.Ctx) error {
 
 		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item id",
@@ -493,7 +493,7 @@ func Items(c *fiber.Ctx) error {
 
 		if err := json.Unmarshal(*item["links"], &links); err != nil {
 			log.Error().Err(err).Msg("error de-serializing link")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item link",
@@ -513,7 +513,7 @@ func Items(c *fiber.Ctx) error {
 		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing item links",
@@ -600,7 +600,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 	featureCollection, err := stac.Search(cql)
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusInternalServerError)
 		return c.JSON(stac.Message{
 			Code:        stac.ServerError,
 			Description: "stac search returned an error",
@@ -615,7 +615,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 
 		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item id",
@@ -624,7 +624,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 
 		if err := json.Unmarshal(*item["links"], &links); err != nil {
 			log.Error().Err(err).Msg("error de-serializing link")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item link",
@@ -644,7 +644,7 @@ func itemFromIDs(c *fiber.Ctx, ids []string) error {
 		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing item links",

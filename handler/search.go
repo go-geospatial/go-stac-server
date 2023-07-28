@@ -64,10 +64,10 @@ func Search(c *fiber.Ctx) error {
 	featureCollection, err := stac.Search(cql)
 	if err != nil {
 		log.Error().Err(err).Msg("stac search returned an error")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusBadRequest)
 		return c.JSON(stac.Message{
-			Code:        stac.ServerError,
-			Description: "stac search returned an error",
+			Code:        stac.ParameterError,
+			Description: err.Error(),
 		})
 	}
 
@@ -79,7 +79,7 @@ func Search(c *fiber.Ctx) error {
 
 		if err := json.Unmarshal(*item["id"], &itemID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing id")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item id",
@@ -88,7 +88,7 @@ func Search(c *fiber.Ctx) error {
 
 		if err := json.Unmarshal(*item["links"], &links); err != nil {
 			log.Error().Err(err).Msg("error de-serializing link")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item link",
@@ -98,7 +98,7 @@ func Search(c *fiber.Ctx) error {
 		var collectionID string
 		if err := json.Unmarshal(*item["collection"], &collectionID); err != nil {
 			log.Error().Err(err).Msg("error de-serializing collectionId")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error de-serializing item collectionId",
@@ -119,7 +119,7 @@ func Search(c *fiber.Ctx) error {
 		myLinksJSON, err = json.Marshal(links)
 		if err != nil {
 			log.Error().Err(err).Msg("error serializing links")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing item links",
@@ -162,7 +162,7 @@ func Search(c *fiber.Ctx) error {
 		var jsonRaw json.RawMessage
 		if jsonRaw, err = json.Marshal(cql); err != nil {
 			log.Error().Err(err).Msg("error serializing cql")
-			c.Status(fiber.ErrInternalServerError.Code)
+			c.Status(fiber.StatusInternalServerError)
 			return c.JSON(stac.Message{
 				Code:        stac.ServerError,
 				Description: "error serializing cql",
@@ -175,7 +175,7 @@ func Search(c *fiber.Ctx) error {
 			cql.Token = featureCollection.Next
 			if jsonRaw, err = json.Marshal(cql); err != nil {
 				log.Error().Err(err).Msg("error serializing cql")
-				c.Status(fiber.ErrInternalServerError.Code)
+				c.Status(fiber.StatusInternalServerError)
 				return c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "error serializing cql",
@@ -188,7 +188,7 @@ func Search(c *fiber.Ctx) error {
 			cql.Token = featureCollection.Prev
 			if jsonRaw, err = json.Marshal(cql); err != nil {
 				log.Error().Err(err).Msg("error serializing cql")
-				c.Status(fiber.ErrInternalServerError.Code)
+				c.Status(fiber.StatusInternalServerError)
 				return c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "error serializing cql",

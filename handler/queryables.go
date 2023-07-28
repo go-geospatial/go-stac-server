@@ -38,7 +38,7 @@ func Queryables(c *fiber.Ctx) error {
 	pool := database.GetInstance(ctx)
 	if err := pool.QueryRow(ctx, "SELECT get_queryables FROM get_queryables($1::text)", pCollectionID).Scan(&raw); err != nil {
 		log.Error().Err(err).Str("collection", collectionID).Msg("failed to get queryables from database")
-		c.Status(fiber.ErrInternalServerError.Code)
+		c.Status(fiber.StatusInternalServerError)
 		return c.JSON(stac.Message{
 			Code:        "DatabaseError",
 			Description: "failed to get queryables from database",
