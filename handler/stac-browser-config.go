@@ -19,10 +19,16 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/spf13/viper"
 )
 
 func StacBrowserConfig(c *fiber.Ctx) error {
-	data := []byte(fmt.Sprintf("window.STAC_BROWSER_CONFIG = {catalogUrl: \"%s://%s/api/stac/v1\"}", c.Protocol(), c.Hostname()))
+	var data []byte
+	if viper.GetString("gui.config") != "" {
+		data = []byte(viper.GetString("gui.config"))
+	} else {
+		data = []byte(fmt.Sprintf("window.STAC_BROWSER_CONFIG = {catalogUrl: \"%s/api/stac/v1\"}", getBaseURL(c)))
+	}
 	_, err := c.Status(200).Write(data)
 	return err
 }

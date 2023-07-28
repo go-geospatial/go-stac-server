@@ -93,6 +93,7 @@ func getCQLFromBody(c *fiber.Ctx) (stac.CQL, error) {
 
 func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	collectionsStr := c.Query("collections", "")
+	idsStr := c.Query("ids", "")
 	limitStr := c.Query("limit", "10")
 	intersectsStr := c.Query("intersects", "")
 	bboxStr := c.Query("bbox", "")
@@ -114,7 +115,10 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	}
 
 	// parse collections
-	collections := parseCollections(collectionsStr)
+	collections := parseStringList(collectionsStr)
+
+	// parse IDs
+	ids := parseStringList(idsStr)
 
 	// parse limit
 	limit, err := parseLimit(c, limitStr)
@@ -177,6 +181,10 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 		cql.Collections = collections
 	}
 
+	if idsStr != "" {
+		cql.Ids = ids
+	}
+
 	if intersectsStr != "" {
 		cql.Intersects = intersects
 	}
@@ -203,12 +211,12 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	return cql, nil
 }
 
-func parseCollections(collectionsStr string) []string {
-	var collections []string
-	if collectionsStr != "" {
-		collections = strings.Split(collectionsStr, ",")
+func parseStringList(str string) []string {
+	var strList []string
+	if str != "" {
+		strList = strings.Split(str, ",")
 	}
-	return collections
+	return strList
 }
 
 func parseSort(c *fiber.Ctx, sortByStr string) ([]stac.CQLSort, error) {
@@ -231,7 +239,7 @@ func parseSort(c *fiber.Ctx, sortByStr string) ([]stac.CQLSort, error) {
 			} else {
 				err := errors.New("sort field does not match regex")
 				log.Error().Err(err).Msg("sort field does not match regex")
-				c.Status(fiber.ErrInternalServerError.Code)
+				c.Status(fiber.StatusInternalServerError)
 				_ = c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "sort expression must be of the form ([+-]?)(.*)",
@@ -263,7 +271,7 @@ func parseFields(c *fiber.Ctx, fieldStr string) (stac.CQLFields, error) {
 			} else {
 				err := errors.New("sort field does not match regex")
 				log.Error().Err(err).Msg("sort field does not match regex")
-				c.Status(fiber.ErrInternalServerError.Code)
+				c.Status(fiber.StatusInternalServerError)
 				_ = c.JSON(stac.Message{
 					Code:        stac.ServerError,
 					Description: "fields must be of the form ([-]?)(.*)",

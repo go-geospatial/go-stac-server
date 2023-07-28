@@ -146,6 +146,15 @@ func init() {
 		log.Panic().Err(err).Msg("could not bind base-url")
 	}
 
+	// GUI flags
+	if err := viper.BindEnv("gui.config", "GUI_CONFIG"); err != nil {
+		log.Panic().Err(err).Msg("could not bind GUI_CONFIG")
+	}
+	rootCmd.Flags().String("gui-config", "", "config to use with STAC browser. see: https://github.com/radiantearth/stac-browser/blob/main/docs/options.md")
+	if err := viper.BindPFlag("gui.config", rootCmd.Flags().Lookup("gui-config")); err != nil {
+		log.Panic().Err(err).Msg("could not bind gui-config")
+	}
+
 	// Logging configuration
 	if err := viper.BindEnv("log.level", "LOG_LEVEL"); err != nil {
 		log.Panic().Err(err).Msg("could not bind LOG_LEVEL")
