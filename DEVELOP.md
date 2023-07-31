@@ -9,10 +9,11 @@ NPM is stored in the `static/files` directory.
 To update, perform the following steps:
 
 1. Clone the repository from `git@github.com:radiantearth/stac-browser.git`
-2. Edit the file `public/index.html` and uncomment the line that loads the config.js script. This is used to dynamically configure the URL of the STAC server.
-3. Run the following commands:
+2. Apply stac-browser.patch and build:
 
 ```bash
+git clone git@github.com:radiantearth/stac-browser.git
+patch < ../stac-browser.patch
 npm install
 npm run build --historyMode=hash
 ```

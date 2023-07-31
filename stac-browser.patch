@@ -1,0 +1,51 @@
+diff --git a/basemaps.config.js b/basemaps.config.js
+index 230e7988..e5fa6d1c 100644
+--- a/basemaps.config.js
++++ b/basemaps.config.js
+@@ -70,5 +70,10 @@ export default function configureBasemap(stac, map, i18n) {
+     }
+   }
+ 
+-  return targets.map(target => BASEMAPS[target.toLowerCase()]);
+-};
+\ No newline at end of file
++  let myBasemaps = BASEMAPS;
++  if (window.STAC_BROWSER_CONFIG !== undefined && window.STAC_BROWSER_CONFIG.basemaps !== undefined) {
++    myBasemaps = window.STAC_BROWSER_CONFIG.basemaps
++  }
++
++  return targets.map(target => myBasemaps[target.toLowerCase()]);
++};
+diff --git a/config.js b/config.js
+index 01110537..13c66b61 100644
+--- a/config.js
++++ b/config.js
+@@ -26,7 +26,7 @@ module.exports = {
+     buildTileUrlTemplate: ({href, asset}) => "https://tiles.rdnt.io/tiles/{z}/{x}/{y}@2x?url=" + encodeURIComponent(asset.href.startsWith("/vsi") ? asset.href : href),
+     stacProxyUrl: null,
+     pathPrefix: "/",
+-    historyMode: "history",
++    historyMode: "hash",
+     cardViewMode: "cards",
+     cardViewSort: "asc",
+     showThumbnailsAsAssets: false,
+@@ -41,4 +41,4 @@ module.exports = {
+     requestQueryParameters: {},
+     preprocessSTAC: null,
+     authConfig: null
+-};
+\ No newline at end of file
++};
+diff --git a/public/index.html b/public/index.html
+index cc206ac3..7e6a1e64 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -5,7 +5,7 @@
+     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+     <meta name="viewport" content="width=device-width, initial-scale=1">
+     <meta id="meta-description" name="description" content="">
+-    <!-- <script defer="defer" src="./config.js"></script> -->
++    <script defer="defer" src="./config.js"></script>
+     <title><%= htmlWebpackPlugin.options.title %></title>
+   </head>
+   <body>
