@@ -49,3 +49,46 @@ index cc206ac3..7e6a1e64 100644
      <title><%= htmlWebpackPlugin.options.title %></title>
    </head>
    <body>
+diff --git a/src/components/Map.vue b/src/components/Map.vue
+index 4338691c..ea5f18ef 100644
+--- a/src/components/Map.vue
++++ b/src/components/Map.vue
+@@ -41,6 +41,7 @@ import STAC from '../models/stac';
+ import { object as formatObject, string as formatString } from '@radiantearth/stac-fields/datatypes';
+ import { BPopover } from 'bootstrap-vue';
+ import getBasemaps from '../../basemaps.config';
++import { CRS } from 'leaflet';
+ 
+ // Fix missing icons: https://vue2-leaflet.netlify.app/quickstart/#marker-icons-are-missing
+ import { Icon } from 'leaflet';
+@@ -89,6 +90,12 @@ export default {
+     }
+   },
+   data() {
++    let mapOptions = {
++      zoomControl: false
++    }
++    if (window.STAC_BROWSER_CONFIG !== undefined && window.STAC_BROWSER_CONFIG.crs === 'EPSG:4326') {
++      mapOptions.crs = CRS.EPSG4326;
++    } 
+     return {
+       secondaryColor: '#FF8833',
+       secondaryWeight: 2,
+@@ -98,9 +105,7 @@ export default {
+       stacLayer: null,
+       geojson: null,
+       itemPreviewsLayer: null,
+-      mapOptions: {
+-        zoomControl: false
+-      },
++      mapOptions: mapOptions,
+       dblClickState: null,
+       selectedItem: null,
+       ix: 1
+@@ -452,4 +457,4 @@ export default {
+ <style lang="scss">
+ @import '~leaflet/dist/leaflet.css';
+ @import '../theme/leaflet-areaselect.scss';
+-</style>
+\ No newline at end of file
++</style>
