@@ -17,7 +17,6 @@ package stac
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-geospatial/go-stac-server/database"
 	json "github.com/goccy/go-json"
@@ -67,8 +66,6 @@ func Search(params CQL) (*SearchResponse, error) {
 		log.Error().Err(err).Msg("failed to marshal search parameters")
 		return nil, err
 	}
-
-	fmt.Printf("== %+v == \n", params)
 
 	pool := database.GetInstance(ctx)
 	row := pool.QueryRow(ctx, "SELECT search FROM search($1::text::jsonb)", paramsJSON)

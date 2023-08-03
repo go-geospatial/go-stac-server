@@ -48,7 +48,6 @@ func buildQueryArray(c *fiber.Ctx) []string {
 
 func getCQLFromBody(c *fiber.Ctx) (stac.CQL, error) {
 	var cql stac.CQL
-	fmt.Println(string(c.Body()))
 	if err := json.Unmarshal(c.Body(), &cql); err != nil {
 		log.Error().Err(err).Msg("could not parse search body")
 		c.Status(fiber.StatusBadRequest)
