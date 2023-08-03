@@ -43,7 +43,7 @@ type CQL struct {
 	Conf        *json.RawMessage `json:"conf,omitempty"`
 	Query       *json.RawMessage `json:"query,omitempty"`
 	Fields      *CQLFields       `json:"fields,omitempty"`
-	SortBy      []CQLSort        `json:"sortby,omitempty"`
+	SortBy      *json.RawMessage `json:"sortby,omitempty"`
 	Filter      *json.RawMessage `json:"filter,omitempty"`
 	FilterLang  string           `json:"filter-lang"`
 	Token       string           `json:"token,omitempty"`

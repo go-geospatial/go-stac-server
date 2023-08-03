@@ -57,6 +57,43 @@ func getCQLFromBody(c *fiber.Ctx) (stac.CQL, error) {
 		})
 	}
 
+	// check if sort is a string
+	var sortBy interface{}
+	if cql.SortBy != nil {
+		if err := json.Unmarshal(*cql.SortBy, &sortBy); err != nil {
+			log.Error().Err(err).Msg("could not parse sort by field")
+			c.Status(fiber.StatusBadRequest)
+			return stac.CQL{}, c.JSON(stac.Message{
+				Code:        stac.ParameterError,
+				Description: "could not parse sort by",
+			})
+		}
+	}
+
+	if sortByStr, ok := sortBy.(string); ok {
+		sort, err := parseSort(c, sortByStr)
+		if err != nil {
+			log.Error().Err(err).Msg("could not parse sort by field")
+			c.Status(fiber.StatusBadRequest)
+			return stac.CQL{}, c.JSON(stac.Message{
+				Code:        stac.ParameterError,
+				Description: "could not parse sort by",
+			})
+		}
+
+		var sortJson json.RawMessage
+		sortJson, err = json.Marshal(sort)
+		if err != nil {
+			log.Error().Err(err).Msg("could not serialize sort by field")
+			c.Status(fiber.StatusBadRequest)
+			return stac.CQL{}, c.JSON(stac.Message{
+				Code:        stac.ParameterError,
+				Description: "could not serialize sort by",
+			})
+		}
+		cql.SortBy = &sortJson
+	}
+
 	if len(cql.Bbox) != 0 && cql.Intersects != nil {
 		log.Error().Msg("cannot specify both bbox and intersects")
 		c.Status(fiber.StatusBadRequest)
@@ -204,7 +241,12 @@ func getCQLFromQuery(c *fiber.Ctx) (stac.CQL, error) {
 	}
 
 	if sortByStr != "" {
-		cql.SortBy = sort
+		var rawJson json.RawMessage
+		if rawJson, err = json.Marshal(sort); err != nil {
+			log.Error().Err(err).Msg("could not serialize sort")
+		} else {
+			cql.SortBy = &rawJson
+		}
 	}
 
 	return cql, nil
